@@ -1,8 +1,8 @@
 
 # jupyter-vtk-datawidgets
 
-[![Build Status](https://travis-ci.org/vidartf/ipyvtkdatawidgets.svg?branch=master)](https://travis-ci.org/vidartf/ipyvtkdatawidgets)
-[![codecov](https://codecov.io/gh/vidartf/ipyvtkdatawidgets/branch/master/graph/badge.svg)](https://codecov.io/gh/vidartf/ipyvtkdatawidgets)
+[![Build Status](https://travis-ci.org/vidartf/vtkdatawidgets.svg?branch=master)](https://travis-ci.org/vidartf/vtkdatawidgets)
+[![codecov](https://codecov.io/gh/vidartf/vtkdatawidgets/branch/master/graph/badge.svg)](https://codecov.io/gh/vidartf/vtkdatawidgets)
 
 
 Jupyter data-widget based on VTK sources
@@ -12,13 +12,13 @@ Jupyter data-widget based on VTK sources
 A typical installation requires the following commands to be run:
 
 ```bash
-pip install ipyvtkdatawidgets
-jupyter nbextension enable --py [--sys-prefix|--user|--system] ipyvtkdatawidgets
+pip install vtkdatawidgets
+jupyter nbextension enable --py [--sys-prefix|--user|--system] vtkdatawidgets
 ```
 
 Or, if you use jupyterlab:
 
 ```bash
-pip install ipyvtkdatawidgets
+pip install vtkdatawidgets
 jupyter labextension install @jupyter-widgets/jupyterlab-manager
 ```

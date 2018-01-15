@@ -8,7 +8,7 @@ module.exports = {
   entry: './src/index.ts',
   output: {
     filename: 'index.js',
-    path: __dirname + '/ipyvtkdatawidgets/nbextension/static',
+    path: __dirname + '/vtkdatawidgets/nbextension/static',
     libraryTarget: 'amd'
   },
   module: {

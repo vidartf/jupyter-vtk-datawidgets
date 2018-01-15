@@ -1,2 +1,2 @@
 [run]
-omit = ipyvtkdatawidgets/tests/*
+omit = vtkdatawidgets/tests/*

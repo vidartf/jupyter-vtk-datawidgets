@@ -19,7 +19,7 @@ from setuptools import setup
 
 
 # The name of the project
-name = 'ipyvtkdatawidgets'
+name = 'vtkdatawidgets'
 
 # Ensure a valid python version
 ensure_python('>=3.3')
@@ -86,6 +86,7 @@ setup_args = dict(
     include_package_data = True,
     install_requires = [
         'ipywidgets>=7.0.0',
+        'pyvtk',
     ],
     extras_require = {
         'test': [

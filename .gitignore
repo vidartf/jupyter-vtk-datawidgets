@@ -143,11 +143,11 @@ $RECYCLE.BIN/
 # ----
 
 **/node_modules/
-ipyvtkdatawidgets/nbextension/static/index.*
+vtkdatawidgets/nbextension/static/index.*
 
 # Coverage data
 # -------------
 **/coverage/
 
 # Packed lab extensions
-ipyvtkdatawidgets/labextension
+vtkdatawidgets/labextension
