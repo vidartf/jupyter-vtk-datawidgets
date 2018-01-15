@@ -149,3 +149,5 @@ ipyvtkdatawidgets/nbextension/static/index.*
 # -------------
 **/coverage/
 
+# Packed lab extensions
+ipyvtkdatawidgets/labextension
