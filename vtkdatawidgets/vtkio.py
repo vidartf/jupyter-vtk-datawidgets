@@ -141,6 +141,7 @@ def _proc_data_array(node, path, conf):
     data = read_data(node, conf)
     if data is not None:
         out['data'] = data
+        out['format'] = 'binary'
     return out
 
 
@@ -187,6 +188,7 @@ def _num_bytes_to_num_base64_chars(num_bytes):
     # Rounding up in integer division works by double negation since Python
     # always rounds down.
     return -(-num_bytes // 3) * 4
+
 
 def _read_binary(data, data_type, conf):
     # first read the the block size; it determines the size of the header
@@ -237,6 +239,7 @@ def _read_binary(data, data_type, conf):
         ])
 
     return block_data
+
 
 def read_data(node, conf):
     if node.attrib['format'] == 'ascii':
