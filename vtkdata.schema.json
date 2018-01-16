@@ -13,7 +13,7 @@
     },
     "type": {
       "type": "string",
-      "pattern": "P?((ImageData)|(PolyData)|(RectilinearGrid)|(StructuredGrid)|(UnstructuredGrid))"
+      "pattern": "P?(((Image)|(Poly))Data|((Rectilinear)|(Structured)|(Unstructured))Grid)"
     },
     "version": {
       "type": "string"
@@ -25,8 +25,12 @@
         { "$ref": "#/definitions/PolyData" },
         { "$ref": "#/definitions/RectilinearGrid" },
         { "$ref": "#/definitions/StructuredGrid" },
-        { "$ref": "#/definitions/UnstructuredGrid" },
+        { "$ref": "#/definitions/UnstructuredGrid" }
       ]
+    }, 
+    "AppendedData": {
+      "type": "array",
+      "items": {"type": "null"}
     }
   },
   "required": ["type", "version", "dataset"],
@@ -41,24 +45,41 @@
       "type": "object",
       "properties": {
         "PointData": {
-          "type": "object",
-          "properties": {
-            "Scalars": { "type": "string" },
-            "Vectors": { "type": "string" },
-            "Normals": { "type": "string" },
-            "Tensors": { "type": "string" },
-            "TCoords": { "type": "string" },
-            "data_arrays": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/DataArray" }
-            }
-          }
+          "oneOf": [{ "$ref": "#/definitions/PointData"}]
         },
         "CellData": {
-
+          "oneOf": [{ "$ref": "#/definitions/CellData"}]
         }
       },
       "required": ["PointData", "CellData"]
+    },
+    "PointData": {
+      "type": "object",
+      "properties": {
+        "Scalars": { "type": "string" },
+        "Vectors": { "type": "string" },
+        "Normals": { "type": "string" },
+        "Tensors": { "type": "string" },
+        "TCoords": { "type": "string" },
+        "data_arrays": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/DataArray" }
+        }
+      }
+    },
+    "CellData": {
+      "type": "object",
+      "properties": {
+        "Scalars": { "type": "string" },
+        "Vectors": { "type": "string" },
+        "Normals": { "type": "string" },
+        "Tensors": { "type": "string" },
+        "TCoords": { "type": "string" },
+        "data_arrays": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/DataArray" }
+        }
+      }
     },
     "DataArray": {
       "type": "object",
@@ -96,6 +117,42 @@
           }
       }
     },
+    "Verts": {
+      "type": "object",
+      "properties": {
+          "arrays": {
+            "type": "array",
+            "items": {"$ref": "#/defintions/DataArray"}
+          }
+      }
+    },
+    "Lines": {
+      "type": "object",
+      "properties": {
+          "arrays": {
+            "type": "array",
+            "items": {"$ref": "#/defintions/DataArray"}
+          }
+      }
+    },
+    "Strips": {
+      "type": "object",
+      "properties": {
+          "arrays": {
+            "type": "array",
+            "items": {"$ref": "#/defintions/DataArray"}
+          }
+      }
+    },
+    "Polys": {
+      "type": "object",
+      "properties": {
+          "arrays": {
+            "type": "array",
+            "items": {"$ref": "#/defintions/DataArray"}
+          }
+      }
+    },
     "ImageData": {
       "type": "object",
 
@@ -110,14 +167,10 @@
       }
     },
     "ImageDataPiece": {
-      "extent": { },
-      "point_data": {
-        "type": "object",
-        "oneOf": [{ "$ref": "#/definitions/PointData"}]
-      },
-      "cell_data": {
-        "type": "object",
-        "oneOf": [{ "$ref": "#/definitions/PointData"}]
+      "type": "object",
+      "oneOf": [ { "$ref": "#/definitions/Piece" } ],
+      "properties": {
+        "extent": { "oneOf": [ { "$ref": "#/definitions/extent" } ] },
       }
     },
     
@@ -125,8 +178,7 @@
       "type": "object",
 
       "properties": {
-        "origin": { "type": "string", "pattern": "\\d+ \\d+ \\d+"},
-        "spacing": { "type": "string", "pattern": "\\d+ \\d+ \\d+"},
+        "whole_extent": { "oneOf": [ { "$ref": "#/definitions/extent" } ] },
         "pieces": {
           "type": "array",
           "items": { "$ref": "#/definitions/RectilinearGridPiece"}
@@ -134,14 +186,14 @@
       }
     },
     "RectilinearGridPiece": {
-      "extent": { "oneOf": [ { "$ref": "#/definitions/extent" } ] },
-      "point_data": {
-        "type": "object",
-        "oneOf": [{ "$ref": "#/definitions/PointData"}]
-      },
-      "cell_data": {
-        "type": "object",
-        "oneOf": [{ "$ref": "#/definitions/PointData"}]
+      "type": "object",
+      "oneOf": [ { "$ref": "#/definitions/Piece" } ],
+      "properties": {
+        "extent": { "oneOf": [ { "$ref": "#/definitions/extent" } ] },
+        "Coordinates": {
+          "type": "object",
+          "oneOf": [{ "$ref": "#/definitions/Coordinates"}]
+        }
       }
     },
     
@@ -149,8 +201,7 @@
       "type": "object",
 
       "properties": {
-        "origin": { "type": "string", "pattern": "\\d+ \\d+ \\d+"},
-        "spacing": { "type": "string", "pattern": "\\d+ \\d+ \\d+"},
+        "whole_extent": { "oneOf": [ { "$ref": "#/definitions/extent" } ] },
         "pieces": {
           "type": "array",
           "items": { "$ref": "#/definitions/StructuredGridPiece"}
@@ -158,14 +209,14 @@
       }
     },
     "StructuredGridPiece": {
-      "extent": { "oneOf": [ { "$ref": "#/definitions/extent" } ] },
-      "point_data": {
-        "type": "object",
-        "oneOf": [{ "$ref": "#/definitions/PointData"}]
-      },
-      "cell_data": {
-        "type": "object",
-        "oneOf": [{ "$ref": "#/definitions/PointData"}]
+      "type": "object",
+      "oneOf": [ { "$ref": "#/definitions/Piece" } ],
+      "properties": {
+        "extent": { "oneOf": [ { "$ref": "#/definitions/extent" } ] },
+        "Points": {
+          "type": "object",
+          "oneOf": [{ "$ref": "#/definitions/Points"}]
+        }
       }
     },
     
@@ -173,8 +224,6 @@
       "type": "object",
 
       "properties": {
-        "origin": { "type": "string", "pattern": "\\d+ \\d+ \\d+"},
-        "spacing": { "type": "string", "pattern": "\\d+ \\d+ \\d+"},
         "pieces": {
           "type": "array",
           "items": { "$ref": "#/definitions/PolyDataPiece"}
@@ -182,14 +231,34 @@
       }
     },
     "PolyDataPiece": {
-      "extent": { "oneOf": [ { "$ref": "#/definitions/extent" } ] },
-      "point_data": {
-        "type": "object",
-        "oneOf": [{ "$ref": "#/definitions/PointData"}]
-      },
-      "cell_data": {
-        "type": "object",
-        "oneOf": [{ "$ref": "#/definitions/PointData"}]
+      "type": "object",
+      "oneOf": [ { "$ref": "#/definitions/Piece" } ],
+      "properties": {
+        "NumberOfPoints": {"type": "number"},
+        "NumberOfVerts": {"type": "number"},
+        "NumberOfLines": {"type": "number"},
+        "NumberOfStrips": {"type": "number"},
+        "NumberOfPolys": {"type": "number"},
+        "Points": {
+          "type": "object",
+          "oneOf": [{ "$ref": "#/definitions/Points"}]
+        },
+        "Verts": {
+          "type": "object",
+          "oneOf": [{ "$ref": "#/definitions/Verts"}]
+        },
+        "Lines": {
+          "type": "object",
+          "oneOf": [{ "$ref": "#/definitions/Lines"}]
+        },
+        "Strips": {
+          "type": "object",
+          "oneOf": [{ "$ref": "#/definitions/Strips"}]
+        },
+        "Polys": {
+          "type": "object",
+          "oneOf": [{ "$ref": "#/definitions/Polys"}]
+        }
       }
     },
     
@@ -197,8 +266,6 @@
       "type": "object",
 
       "properties": {
-        "origin": { "type": "string", "pattern": "\\d+ \\d+ \\d+"},
-        "spacing": { "type": "string", "pattern": "\\d+ \\d+ \\d+"},
         "pieces": {
           "type": "array",
           "items": { "$ref": "#/definitions/UnstructuredGridPiece"}
@@ -206,14 +273,19 @@
       }
     },
     "UnstructuredGridPiece": {
-      "extent": { "oneOf": [ { "$ref": "#/definitions/extent" } ] },
-      "point_data": {
-        "type": "object",
-        "oneOf": [{ "$ref": "#/definitions/PointData"}]
-      },
-      "cell_data": {
-        "type": "object",
-        "oneOf": [{ "$ref": "#/definitions/PointData"}]
+      "type": "object",
+      "oneOf": [ { "$ref": "#/definitions/Piece" } ],
+      "properties": {
+        "NumberOfPoints": {"type": "number"},
+        "NumberOfCells": {"type": "number"},
+        "Points": {
+          "type": "object",
+          "oneOf": [{ "$ref": "#/definitions/Points"}]
+        },
+        "Cells": {
+          "type": "object",
+          "oneOf": [{ "$ref": "#/definitions/Cells"}]
+        }
       }
     }
   }

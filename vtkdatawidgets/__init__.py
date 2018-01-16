@@ -4,7 +4,7 @@
 # Copyright (c) Vidar Tonaas Fauske.
 # Distributed under the terms of the Modified BSD License.
 
-from .widget import ExampleWidget
+from .widget import VtkDataWidget
 from ._version import __version__, version_info
 
 from .nbextension import _jupyter_nbextension_paths
