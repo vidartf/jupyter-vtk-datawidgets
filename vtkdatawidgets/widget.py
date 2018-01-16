@@ -8,17 +8,17 @@
 TODO: Add module docstring
 """
 
-from ipywidgets import Widget
-from traitlets import Unicode, Undefined
-import numpy as np
-from ipydatawidgets import DataUnion, data_union_serialization
-import pyvtk
+from traitlets import Unicode, Undefined, Dict
+from ipydatawidgets import DataWidget
+
+from .vtkio import VtkXmlReader
+from .serializers import vtk_data_serialization
 
 module_name = "jupyter-vtk-datawidgets"
 module_version = "0.1.0"
 
 
-class VtkDataWidget(Widget):
+class VtkDataWidget(DataWidget):
     """TODO: Add docstring here
     """
     _model_name =  Unicode('VtkDataModel').tag(sync=True)
@@ -28,24 +28,15 @@ class VtkDataWidget(Widget):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 
-    header = Unicode().tag(sync=True)
-    point_data = DataUnion().tag(sync=True, **data_union_serialization)
-    cell_data = DataUnion().tag(sync=True, **data_union_serialization)
-    structure = DataUnion().tag(sync=True, **data_union_serialization)
+    data = Dict().tag(sync=True, **vtk_data_serialization)
 
-    def __init__(self, filename=None, point_data=Undefined, cell_data=Undefined, structure=Undefined):
-        if f is not None:
+    def __init__(self, filename=None, data=None):
+        if filename is not None:
             if not isinstance(filename, str):
                 raise TypeError("Filename must be string.")
-            vtkData = pyvtk.VtkData(filename)
-            if point_data is Undefined:
-                point_data = vtkData.point_data
-            if cell_data is Undefined:
-                cell_data
+            data = VtkXmlReader(filename)
         
         super(VtkDataWidget, self).__init__(
-            point_data=point_data,
-            cell_data=cell_data,
-            structure=structure,
+            data=data,
         )
         
