@@ -258,6 +258,23 @@ def read_data(node, conf):
         data = data.reshape(-1, int(node.attrib['NumberOfComponents']))
     return data
 
+
+def _inline_appended_data(data, conf):
+    appdata = data.pop('appended_data')
+    encoded = appdata[0] if appdata else ''
+    
+    for sub in data['dataset']['pieces']:
+        for da in sub.get('data_arrays', []):
+            if da['format'] != 'appended':
+                continue
+            da['format'] = 'binary'
+            offset = da.pop('offset')
+            data = _read_binary(encoded[offset:], da['type'], conf)
+            if 'NumberOfComponents' in da:
+                data = data.reshape(-1, da['NumberOfComponents'])
+            da['data'] = data
+
+
 class VtkXmlReader(object):
     def __init__(self, filename):
         self.load(filename)
@@ -267,4 +284,9 @@ class VtkXmlReader(object):
         root = tree.getroot()
 
         _validate_root(root)
-        self.data = _proc(root, (), {})
+
+        conf = {}
+        partial = _proc(root, (), conf)
+        _inline_appended_data(partial, conf)
+        self.data = partial
+
