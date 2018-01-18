@@ -37,6 +37,8 @@ import re
 
 import numpy
 
+import vtkdatawidgets.widget as vtk_widgets
+
 _RE_TYPE = re.compile(r'P?(((Image)|(Poly))Data|((Rectilinear)|(Structured)|(Unstructured))Grid)')
 
 _types = (
@@ -44,7 +46,7 @@ _types = (
     'UnstructuredGrid',
 )
 
-_expected_piece_tags = {
+expected_piece_tags = {
     'ImageData': ['PointData', 'CellData'],
     'RectilinearGrid': ['PointData', 'CellData', 'Coordinates'],
     'StructuredGrid': ['PointData', 'CellData', 'Points'],
@@ -82,93 +84,114 @@ def _validate_root(root):
     assert _RE_TYPE.match(main_type), 'Unknown type: %r' % main_type
 
 def _proc_root(root, path, conf):
-    out = {}
-    out['byte_order'] = root.attrib.get('byte_order', None)
-    out['version'] = root.attrib.get('version', None)
-    out['compressor'] = root.attrib.get('compressor', None)
-    out['type'] = root.attrib['type']
-    out['appended_data'] = []
-    conf['compressor'] = out['compressor']
+    main_type = root.attrib['type']
+    appended_data = []
+    conf['compressor'] = root.attrib['compressor']
+    conf['byte_order'] = root.attrib['byte_order']
+    conf['version'] = root.attrib['version']
+    dataset_node = None
     for c in root:
-        if c.tag == out['type']:
-            out['dataset'] = _proc(c, path + (c.tag,), conf)
+        if c.tag == main_type:
+            if dataset_node is not None:
+                raise ValueError('Multiple %r elements in file!' % main_type)
+            dataset_node = c
         elif c.tag == 'AppendendData':
             assert c.attrib['encoding'] == 'base64'
             data = c.text.strip()
             # The appended data always begins with a (meaningless)
             # underscore.
             assert data[0] == '_'
-            out['appended_data'].append(data[1:])
-    return out
+            appended_data.append(data[1:])
+    conf['appended_data'] = appended_data
+    dataset = _proc(c, path + (c.tag,), conf)
+    return dataset, appended_data
 
 def _proc_main_tag(node, path, conf):
-    is_parallel = node.tag[0] == 'P'
+    main_type = node.tag
+    is_parallel = main_type[0] == 'P'
 
-    out = {}
-    out.update({kv for kv in _proc_attributes(node.attrib)})
     pieces = []
     for sub in node:
         if sub.tag == 'Piece':
             pieces.append(_proc(sub, path + (sub.tag,), conf))
-    out['pieces'] = pieces
-    return out
-        
+
+    kwargs = dict({kv for kv in _proc_attributes(node.attrib)})
+    kwargs['pieces'] = pieces
+
+    try:
+        cls = getattr(vtk_widgets, main_type)
+    except AttributeError:
+        raise ValueError('Unsupported dataset type: %r' % main_type)
+    return cls(**kwargs)
+
 def _proc_piece(node, path, conf):
-    out = {}
-    out.update({kv for kv in _proc_attributes(node.attrib)})
+    data = []
     for sub in node:
-        if sub.tag in _expected_piece_tags[path[-2]]:
-            out[sub.tag] = _proc(sub, path + (sub.tag,), conf)
-    return out
+        if sub.tag in expected_piece_tags[path[-2]]:
+            data.append(_proc(sub, path + (sub.tag,), conf))
+    return vtk_widgets.Piece(
+        attributes=dict({kv for kv in _proc_attributes(node.attrib)}),
+        data=data,
+    )
 
 def _proc_pc_data(node, path, conf):
-    out = _proc_sub_piece_data(node, path, conf)
+    data_arrays = _proc_piece_dataarrays(node, path, conf)
     names = []
-    for da in out['data_arrays']:
-        names.append(da['Name'])
+    for da in data_arrays:
+        names.append(da.name)
+    attributes = {}
     for key, value in node.attrib.items():
         if key in ('Scalars', 'Vectors', 'Normals', 'Tensors', 'TCoords'):
             assert value in names, 'Could not find array name %r in %r' % (
                 value, names)
-            out[key] = value
-    return out
+            attributes[key] = value
+    return vtk_widgets.DataContainer(
+        attributes=attributes,
+        kind=node.tag,
+        data_arrays=data_arrays,
+    )
 
 def _proc_points(node, path, conf):
-    out = _proc_sub_piece_data(node, path, conf)
-    assert len(out['data_arrays']) == 1
-    da = out['data_arrays'][0]
-    assert da.get('NumberOfComponents', 0) == 3
-    return out
+    data_arrays = _proc_piece_dataarrays(node, path, conf)
+    assert len(data_arrays) == 1
+    da = data_arrays[0]
+    assert da.data.shape[1] == 3
+    return vtk_widgets.DataContainer(
+        kind=node.tag,
+        data_arrays=data_arrays,
+    )
 
 def _proc_coordinates(node, path, conf):
-    out = _proc_sub_piece_data(node, path, conf)
-    assert len(out['data_arrays']) == 3
-    return out
+    data_arrays = _proc_piece_dataarrays(node, path, conf)
+    assert len(data_arrays) == 3
+    return vtk_widgets.DataContainer(
+        kind=node.tag,
+        data_arrays=data_arrays,
+    )
 
-def _proc_sub_piece_data(node, path, conf):
-    out = {}
-    out['data_arrays'] = []
+def _proc_datacontainer_generic(node, path, conf):
+    data_arrays = _proc_piece_dataarrays(node, path, conf)
+    return vtk_widgets.DataContainer(
+        kind=node.tag,
+        data_arrays=data_arrays,
+    )
+
+def _proc_piece_dataarrays(node, path, conf):
+    data_arrays = []
     for sub in node:
         if sub.tag != 'DataArray':
             continue
         da = _proc(sub, path + (sub.tag,), conf)
-        out['data_arrays'].append(da)
-    return out
+        data_arrays.append(da)
+    return data_arrays
 
 def _proc_data_array(node, path, conf):
-    out = {}
-    for k in ('type', 'format', 'Name'):
-        out[k] = node.attrib.get(k, None)
-    for k in ('NumberOfComponents', 'offset'):
-        try:
-            out[k] = int(node.attrib[k])
-        except KeyError:
-            pass
+    name = node.attrib.get('Name', None)
     data = read_data(node, conf)
-    if data is not None:
-        out['data'] = data
-        out['format'] = 'binary'
-    return out
+    return vtk_widgets.DataArray(
+        data=data,
+        name=name,
+    )
 
 
 def _proc_attributes(attrib):
@@ -190,7 +213,7 @@ _processors = {
     '/*/Piece/CellData': _proc_pc_data,
     '/*/Piece/Points': _proc_points,
     '/*/Piece/Coordinates': _proc_coordinates,
-    '/*/Piece/*': _proc_sub_piece_data,
+    '/*/Piece/*': _proc_datacontainer_generic,
     '/*/Piece/*/DataArray': _proc_data_array,
 }
 
@@ -281,41 +304,23 @@ def read_data(node, conf):
         assert node.attrib['format'] == 'appended', \
             'Unknown data format \'{}\'.'.format(node.attrib['format'])
 
-        return None
+        appdata = conf['appended_data']
+        encoded = appdata[0] if appdata else ''
+
+        offset = node.attrib['offset']
+        data = _read_binary(encoded[offset:], da['type'], conf)
 
     if 'NumberOfComponents' in node.attrib:
         data = data.reshape(-1, int(node.attrib['NumberOfComponents']))
     return data
 
 
-def _inline_appended_data(data, conf):
-    appdata = data.pop('appended_data')
-    encoded = appdata[0] if appdata else ''
-    
-    for sub in data['dataset']['pieces']:
-        for da in sub.get('data_arrays', []):
-            if da['format'] != 'appended':
-                continue
-            da['format'] = 'binary'
-            offset = da.pop('offset')
-            data = _read_binary(encoded[offset:], da['type'], conf)
-            if 'NumberOfComponents' in da:
-                data = data.reshape(-1, da['NumberOfComponents'])
-            da['data'] = data
 
+def read_vtk_xml(filename):
+    tree = ET.parse(filename)
+    root = tree.getroot()
 
-class VtkXmlReader(object):
-    def __init__(self, filename):
-        self.load(filename)
-    
-    def load(self, filename):
-        tree = ET.parse(filename)
-        root = tree.getroot()
+    _validate_root(root)
 
-        _validate_root(root)
-
-        conf = {}
-        partial = _proc(root, (), conf)
-        _inline_appended_data(partial, conf)
-        self.data = partial
+    return _proc(root, (), {})
 

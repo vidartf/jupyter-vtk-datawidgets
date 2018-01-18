@@ -10,12 +10,10 @@ import {
 } from '@phosphor/widgets';
 
 import {
-  IJupyterWidgetRegistry
+  IJupyterWidgetRegistry, ExportMap
  } from '@jupyter-widgets/base';
 
-import {
-  ExampleModel, ExampleView
-} from './widget';
+import * as widgets from './widget';
 
 import {
   JUPYTER_EXTENSION_VERSION
@@ -45,9 +43,6 @@ function activateWidgetExtension(app: Application<Widget>, registry: IJupyterWid
   registry.registerWidget({
     name: 'jupyter-vtk-datawidgets',
     version: JUPYTER_EXTENSION_VERSION,
-    exports: {
-      ExampleModel: ExampleModel,
-      ExampleView: ExampleView
-    }
+    exports: widgets as any as ExportMap
   });
 }
