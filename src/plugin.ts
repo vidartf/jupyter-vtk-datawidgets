@@ -13,7 +13,7 @@ import {
   IJupyterWidgetRegistry, ExportMap
  } from '@jupyter-widgets/base';
 
-import * as widgets from './widget';
+import * as widgets from './widgets';
 
 import {
   JUPYTER_EXTENSION_VERSION

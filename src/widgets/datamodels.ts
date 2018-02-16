@@ -7,7 +7,7 @@ import {
 
 import {
   JUPYTER_EXTENSION_VERSION
-} from './version';
+} from '../version';
 
 
 /**
@@ -86,12 +86,10 @@ class DataContainer extends VtkWidget {
 
 
 export
-class Piece extends VtkWidget {
+class DataSet extends VtkWidget {
   defaults() {
     return {...super.defaults(),
-      _model_name: Piece.model_name,
-      attributes: {},
-      data: [],
+      containers: [],
     };
   }
 
@@ -99,17 +97,15 @@ class Piece extends VtkWidget {
     ...VtkWidget.serializers,
     // Add any extra serializers here
   }
-
-  static model_name = 'Piece';
 }
 
 
 export
-class DataSet extends VtkWidget {
+class MutableDataSet extends VtkWidget {
   defaults() {
     return {...super.defaults(),
-      _model_name: Piece.model_name,
-      pieces: [],
+      _model_name: MutableDataSet.model_name,
+      metadata: {},
     };
   }
 
@@ -118,8 +114,9 @@ class DataSet extends VtkWidget {
     // Add any extra serializers here
   }
 
-  static model_name = 'Piece';
+  static model_name = 'MutableDataSet';
 }
+
 
 
 export
@@ -138,7 +135,57 @@ class ImageData extends DataSet {
     // Add any extra serializers here
   }
 
-  static model_name = 'Piece';
+  static model_name = 'ImageData';
+}
+
+export
+class RectilinearGrid extends DataSet {
+  defaults() {
+    return {...super.defaults(),
+      _model_name: RectilinearGrid.model_name,
+      whole_extent: [],
+    };
+  }
+
+  static serializers = {
+    ...VtkWidget.serializers,
+    // Add any extra serializers here
+  }
+
+  static model_name = 'RectilinearGrid';
+}
+
+export
+class StructuredGrid extends DataSet {
+  defaults() {
+    return {...super.defaults(),
+      _model_name: StructuredGrid.model_name,
+      whole_extent: [],
+    };
+  }
+
+  static serializers = {
+    ...VtkWidget.serializers,
+    // Add any extra serializers here
+  }
+
+  static model_name = 'StructuredGrid';
+}
+
+export
+class PolyData extends DataSet {
+  defaults() {
+    return {...super.defaults(),
+      _model_name: PolyData.model_name,
+    };
+  }
+
+  static serializers = {
+    ...VtkWidget.serializers,
+    // Add any extra serializers here
+  }
+
+  static model_name = 'PolyData';
 }
 
 
