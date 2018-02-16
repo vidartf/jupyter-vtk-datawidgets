@@ -41,7 +41,8 @@
     "watch:nbextension": "webpack --watch"
   },
   "dependencies": {
-    "@jupyter-widgets/base": "^1.0.1"
+    "@jupyter-widgets/base": "^1.0.1",
+    "vtk.js": "^6.2.8"
   },
   "devDependencies": {
     "@phosphor/application": "^1.5.0",
@@ -65,7 +66,7 @@
     "rimraf": "^2.6.2",
     "source-map-loader": "^0.2.1",
     "ts-loader": "^2.3.2",
-    "typescript": "~2.4.2",
+    "typescript": "~2.7.2",
     "webpack": "^3.4.1"
   },
   "jupyterlab": {
