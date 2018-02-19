@@ -1,3 +1,3 @@
 
 
-export * from './datamodels'
+export * from './gen';

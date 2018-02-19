@@ -67,6 +67,7 @@ class DataSet(VtkWidget):
 
 class MutableDataSet(VtkWidget):
     """A DataSet that can represent any kind, and that can switch between them"""
+    kind = Unicode().tag(sync=True)
     containers = VarTuple(Instance(DataContainer)).tag(sync=True, **widget_serialization)
     metadata = Dict().tag(sync=True)
     _model_name =  Unicode('MutableDataSet').tag(sync=True)
@@ -86,9 +87,9 @@ class ImageData(DataSet):
     """
     _model_name =  Unicode('ImageData').tag(sync=True)
 
-    whole_extent = Tuple((Float(),) * 6)
-    origin = Tuple((Float(),) * 3)
-    spacing = Tuple((Float(),) * 3)
+    whole_extent = Tuple(*((Float(),) * 6)).tag(sync=True)
+    origin = Tuple(*((Float(),) * 3)).tag(sync=True)
+    spacing = Tuple(*((Float(),) * 3)).tag(sync=True)
 
     def __init__(self, point_data, cell_data, whole_extent, origin=(0,0,0), spacing=(1,1,1)):
         containers = (
@@ -108,7 +109,7 @@ class RectilinearGrid(DataSet):
     """
     _model_name =  Unicode('RectilinearGrid').tag(sync=True)
 
-    whole_extent = Tuple((Float(),) * 6).tag(sync=True)
+    whole_extent = Tuple(*((Float(),) * 6)).tag(sync=True)
 
 
     def __init__(self, point_data, cell_data, coordinates, whole_extent):
@@ -128,7 +129,7 @@ class StructuredGrid(DataSet):
     """
     _model_name =  Unicode('StructuredGrid').tag(sync=True)
 
-    whole_extent = Tuple((Float(),) * 6).tag(sync=True)
+    whole_extent = Tuple(*((Float(),) * 6)).tag(sync=True)
 
     def __init__(self, point_data, cell_data, points, whole_extent):
         containers = (
@@ -182,3 +183,8 @@ class UnstructuredGrid(DataSet):
         super(UnstructuredGrid, self).__init__(
             containers=containers,
         )
+
+__all__ = [
+    'VtkWidget', 'DataArray', 'DataContainer', 'DataSet', 'MutableDataSet',
+    'ImageData', 'RectilinearGrid', 'StructuredGrid', 'PolyData', 'UnstructuredGrid',
+]
