@@ -1,4 +1,4 @@
-
+'use strict'
 
 // Data sets:
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
@@ -18,13 +18,13 @@ function convertDataArray(widget) {
 
   return {
     name: widget.get('name'),
-    numberOfComponents: data.shape[0],
+    numberOfComponents: data.shape[data.shape.length - 1],
     values: data.data,
   };
 }
 
 
-CELL_ARRAYS = ['Verts', 'Lines', 'Strips', 'Polys']
+const CELL_ARRAYS = ['Verts', 'Lines', 'Strips', 'Polys'];
 
 
 function convertContainer(widget) {
@@ -44,28 +44,34 @@ function convertContainer(widget) {
     return res;
   } else if (kind === 'Points') {
     // vtkPointSet
-    return {
-      ...convertDataArray(dataArrays[0]),
-      vtkClass: 'vtkPoints',
-      name: '_points',
-    };
+    return Object.assign({}, 
+      convertDataArray(dataArrays[0]),
+      {
+        vtkClass: 'vtkPoints',
+        name: '_points',
+      }
+    );
   } else if (CELL_ARRAYS.indexOf(kind) !== -1) {
-    return {
-      ...convertDataArray(dataArrays[0]),
-      vtkClass: 'vtkCellArray',
-      name: `_${kind.toLowerCase()}`,
-    };
+    return Object.assign({}, 
+      convertDataArray(dataArrays[0]),
+      {
+        vtkClass: 'vtkCellArray',
+        name: `_${kind.toLowerCase()}`,
+      }
+    );
   }
 }
 
 
 function convertMetadata(metadata) {
   const ret = {};
-  for (let key of Object.keys(metadata)) {
-    if (key === 'whole_extent') {
-      ret['extent'] = metadata[key];
-    } else {
-      ret[key] = metadata[key];
+  if (metadata) {
+    for (let key of Object.keys(metadata)) {
+      if (key === 'whole_extent') {
+        ret['extent'] = metadata[key];
+      } else {
+        ret[key] = metadata[key];
+      }
     }
   }
   return ret;
@@ -82,12 +88,13 @@ function vtkJupyterBridge(publicAPI, model) {
   model.classHierarchy.push('vtkJupyterBridge');
 
   function updateFromBridge(outData) {
-    const widget = model.widget;
-    const containers = widget.get('containers');
-    const data = {
-      vtkClass: widget.get('kind'),
-      ...convertMetadata(widget.get('metadata')),
-    }
+    const dataset = model.widget.get('dataset');
+    const containers = dataset.get('containers');
+    const data = Object.assign({
+        vtkClass: dataset.get('kind'),
+      },
+      convertMetadata(dataset.get('metadata')),
+    );
     for (let container of containers) {
       data[deCapitalize(container.get('kind'))] = convertContainer(container);
     }

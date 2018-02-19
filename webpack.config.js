@@ -2,6 +2,7 @@ var loaders = [
   { test: /\.ts$/, loader: 'ts-loader' },
   { test: /\.json$/, loader: 'json-loader' },
   { test: /\.js$/, loader: "source-map-loader" },
+  { test: /\.glsl$/, loader: 'webpack-glsl-loader' },
 ];
 
 module.exports = {

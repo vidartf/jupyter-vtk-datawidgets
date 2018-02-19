@@ -49,6 +49,11 @@ class VtkJupyterBridge(VTKPythonAlgorithmBase):
         widget_lut[self] = MutableDataSet()
 
 
+    @property
+    def widget(self):
+        return widget_lut[self]
+
+
     def RequestData(self, request, inInfo, outInfo):
         print('RequestData')
         containers = []
@@ -145,7 +150,7 @@ class VtkJupyterBridge(VTKPythonAlgorithmBase):
             widget_lut[self].containers = containers
             widget_lut[self].metadata = metadata
 
-        print(widget_lut[self])
+        # print(widget_lut[self])
 
         return 1
 

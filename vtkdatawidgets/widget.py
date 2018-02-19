@@ -8,7 +8,7 @@
 TODO: Add module docstring
 """
 
-from ipywidgets import Widget, widget_serialization
+from ipywidgets import Widget, DOMWidget, widget_serialization
 from traitlets import Unicode, Undefined, Dict, List, Enum, Tuple, Float, Instance, Int
 from ipydatawidgets import DataUnion, data_union_serialization
 
@@ -29,7 +29,7 @@ class VtkWidget(Widget):
 class DataArray(VtkWidget):
     """TODO: Add docstring here
     """
-    _model_name = Unicode('DataArray').tag(sync=True)
+    _model_name = Unicode('DataArrayModel').tag(sync=True)
 
     name = Unicode(None, allow_none=True).tag(sync=True)
     data = DataUnion().tag(sync=True, **data_union_serialization)
@@ -41,7 +41,7 @@ class DataContainer(VtkWidget):
     Represents things like Cells, Points, Verts, Lines, Strips, Polys,
     CellData, and PointData.
     """
-    _model_name =  Unicode('DataContainer').tag(sync=True)
+    _model_name = Unicode('DataContainerModel').tag(sync=True)
 
     kind = Unicode().tag(sync=True)
     attributes = Dict().tag(sync=True)
@@ -65,12 +65,11 @@ class DataSet(VtkWidget):
         )
 
 
-class MutableDataSet(VtkWidget):
+class MutableDataSet(DataSet):
     """A DataSet that can represent any kind, and that can switch between them"""
     kind = Unicode().tag(sync=True)
-    containers = VarTuple(Instance(DataContainer)).tag(sync=True, **widget_serialization)
     metadata = Dict().tag(sync=True)
-    _model_name =  Unicode('MutableDataSet').tag(sync=True)
+    _model_name = Unicode('MutableDataSetModel').tag(sync=True)
 
     def __init__(self, containers=(), metadata=Undefined, **kwargs):
         if metadata is Undefined:
@@ -85,7 +84,7 @@ class MutableDataSet(VtkWidget):
 class ImageData(DataSet):
     """TODO: Add docstring here
     """
-    _model_name =  Unicode('ImageData').tag(sync=True)
+    _model_name = Unicode('ImageDataModel').tag(sync=True)
 
     whole_extent = Tuple(*((Float(),) * 6)).tag(sync=True)
     origin = Tuple(*((Float(),) * 3)).tag(sync=True)
@@ -107,7 +106,7 @@ class ImageData(DataSet):
 class RectilinearGrid(DataSet):
     """TODO: Add docstring here
     """
-    _model_name =  Unicode('RectilinearGrid').tag(sync=True)
+    _model_name = Unicode('RectilinearGridModel').tag(sync=True)
 
     whole_extent = Tuple(*((Float(),) * 6)).tag(sync=True)
 
@@ -127,7 +126,7 @@ class RectilinearGrid(DataSet):
 class StructuredGrid(DataSet):
     """TODO: Add docstring here
     """
-    _model_name =  Unicode('StructuredGrid').tag(sync=True)
+    _model_name = Unicode('StructuredGridModel').tag(sync=True)
 
     whole_extent = Tuple(*((Float(),) * 6)).tag(sync=True)
 
@@ -146,7 +145,7 @@ class StructuredGrid(DataSet):
 class PolyData(DataSet):
     """TODO: Add docstring here
     """
-    _model_name =  Unicode('PolyData').tag(sync=True)
+    _model_name = Unicode('PolyDataModel').tag(sync=True)
 
     def __init__(self, point_data, cell_data, points, verts=None, lines=None, strips=None, polys=None):
         containers = (
@@ -171,7 +170,7 @@ class PolyData(DataSet):
 class UnstructuredGrid(DataSet):
     """TODO: Add docstring here
     """
-    _model_name =  Unicode('UnstructuredGrid').tag(sync=True)
+    _model_name = Unicode('UnstructuredGridModel').tag(sync=True)
 
     def __init__(self, point_data, cell_data, points, cells):
         containers = (
@@ -184,7 +183,23 @@ class UnstructuredGrid(DataSet):
             containers=containers,
         )
 
+
+class VtkRenderer(DOMWidget):
+    _model_module = Unicode(module_name).tag(sync=True)
+    _model_module_version = Unicode(module_version).tag(sync=True)
+    _view_module = Unicode(module_name).tag(sync=True)
+    _view_module_version = Unicode(module_version).tag(sync=True)
+    _model_name = Unicode('VtkRendererModel').tag(sync=True)
+    _view_name = Unicode('VtkRendererView').tag(sync=True)
+
+    dataset = Instance(DataSet).tag(sync=True, **widget_serialization)
+    background = Tuple(Float(0), Float(0), Float(0), default_value=(0, 0, 0)).tag(sync=True)
+
+    def __init__(self, dataset, background=(0, 0, 0), **kwargs):
+        super(VtkRenderer, self).__init__(dataset=dataset, background=background, **kwargs)
+
 __all__ = [
     'VtkWidget', 'DataArray', 'DataContainer', 'DataSet', 'MutableDataSet',
     'ImageData', 'RectilinearGrid', 'StructuredGrid', 'PolyData', 'UnstructuredGrid',
+    'VtkRenderer',
 ]

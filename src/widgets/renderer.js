@@ -1,5 +1,4 @@
 
-
 import {
   DOMWidgetModel, DOMWidgetView, ManagerBase
 } from '@jupyter-widgets/base';
@@ -7,7 +6,10 @@ import {
 import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
-import vtkGenericRenderWindow from 'vtk.js/Sources/Rendering/Misc/GenericRenderWindow';
+import vtkOpenGLRenderWindow from 'vtk.js/Sources/Rendering/OpenGL/RenderWindow';
+import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
+import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindowInteractor';
+import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
 
 // Data sets:
@@ -23,25 +25,25 @@ import {
 } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 
 
+import {
+  VtkRendererModel as VtkRendererModelBase
+} from './gen';
 
-class VTKRendererModel extends DOMWidgetModel {
-  defaults() {
-    return {
-      ...super.defaults(),
-      name: '',
-      dataset: null,
-      background: [0, 0, 0],
-    }
+import vtkJupyterBridge from './vtk_binding';
+
+
+
+export
+class VtkRendererModel extends VtkRendererModelBase {
+  initialize() {
+    super.initialize(...arguments);
+    this.wrapper = vtkJupyterBridge.newInstance({widget: this});
   }
 }
 
 
-
-class VTKRendererView extends DOMWidgetView {
-
-  initialize(parameters) {
-    super.initialize(parameters);
-  }
+export
+class VtkRendererView extends DOMWidgetView {
 
   // ----------------------------------------------------------------------------
 
@@ -49,9 +51,10 @@ class VTKRendererView extends DOMWidgetView {
    * 
    */
   render() {
-    createViewer();
-    createPipeline(this.model.name, this.model.dataset);
-    updateCamera(renderer.getActiveCamera());
+    this.createViewer();
+    this.createPipeline();
+    this.updateCamera(this.renderer.getActiveCamera());
+    this.resetCameraPosition(true);
   }
 
   /**
@@ -65,38 +68,33 @@ class VTKRendererView extends DOMWidgetView {
   }
 
   // ----------------------------------------------------------------------------
-  
+
   createViewer() {
-    this.renderWindow = vtkGenericRenderWindow.newInstance({
-      background: this.model.background,
-      container: this.el,
+    this.renderWindow = vtkRenderWindow.newInstance();
+    this.renderer = vtkRenderer.newInstance({
+      background: this.model.get('background') || [0, 0, 0],
     });
-    this.renderWindow.getInteractor().setDesiredUpdateRate(15);
-    this.renderer = this.renderWindow.getRenderer();
+    this.renderWindow.addRenderer(this.renderer);
+    this.openglRenderWindow = vtkOpenGLRenderWindow.newInstance();
+    this.renderWindow.addView(this.openglRenderWindow);
+    this.openglRenderWindow.setContainer(this.el);
 
-    fullScreenRenderer.setResizeCallback(fpsMonitor.update);
+    this.interactor = vtkRenderWindowInteractor.newInstance();
+    this.interactor.setView(this.openglRenderWindow);
+    this.interactor.initialize();
+    this.interactor.bindEvents(this.el);
+
+    this.interactor.setDesiredUpdateRate(15);
+    this.openglRenderWindow.setSize(600, 400);
   }
 
-  // camera
-  updateCamera(camera) {
-    ['zoom', 'pitch', 'elevation', 'yaw', 'azimuth', 'roll', 'dolly'].forEach(
-      (key) => {
-        if (userParams[key]) {
-          camera[key](userParams[key]);
-        }
-        this.renderWindow.render();
-      }
-    );
-  }
-
-  createPipeline(name, dataset) {
+  createPipeline() {
     // VTK pipeline
-    const vtuReader = vtkXMLUnstructuredGridReader.newInstance();
-    vtpReade
-    vtpReader.parseAsArrayBuffer(fileContents);
+    const dataset = this.model.wrapper;
+    dataset.update();
 
     const lookupTable = vtkColorTransferFunction.newInstance();
-    const source = vtpReader.getOutputData(0);
+    const source = dataset.getOutputData(0);
     const mapper = vtkMapper.newInstance({
       interpolateScalarsBeforeMapping: false,
       useLookupTableScalarRange: true,
@@ -114,29 +112,39 @@ class VTKRendererView extends DOMWidgetView {
 
     actor.setMapper(mapper);
     mapper.setInputData(source);
-    renderer.addActor(actor);
+    this.renderer.addActor(actor);
 
     // Manage update when lookupTable change
     lookupTable.onModified(() => {
-      renderWindow.render();
+      this.renderWindow.render();
     });
 
     // First render
-    renderer.resetCamera();
-    renderWindow.render();
-
-    global.pipeline[fileName] = {
-      actor,
-      mapper,
-      source,
-      lookupTable,
-      renderer,
-      renderWindow,
-    };
-
-    // Update stats
-    fpsMonitor.update();
+    this.renderer.resetCamera();
+    this.renderWindow.render();
   }
 
+  resetCameraPosition(doRender=false) {
+    const activeCamera = this.renderWindow.getRenderers()[0].getActiveCamera();
+    activeCamera.setPosition(0, 0, 3);
+    activeCamera.setFocalPoint(0, 0, 0);
+    activeCamera.setViewUp(0, 1, 0);
+    activeCamera.setClippingRange(3.49999, 4.50001);
 
+    if (doRender) {
+      this.renderWindow.render();
+    }
+  }
+
+  // camera
+  updateCamera(camera) {
+    /*['zoom', 'pitch', 'elevation', 'yaw', 'azimuth', 'roll', 'dolly'].forEach(
+      (key) => {
+        this.renderWindow.render();
+      }
+    );*/
+  }
 }
+
+
+
