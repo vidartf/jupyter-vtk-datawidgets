@@ -52,6 +52,7 @@ class VtkJupyterBridge(VTKPythonAlgorithmBase):
     def RequestData(self, request, inInfo, outInfo):
         print('RequestData')
         containers = []
+        metadata = {}
         inp = vtk.vtkDataSet.GetData(inInfo[0])
 
         cell_data = inp.GetCellData()
@@ -65,7 +66,7 @@ class VtkJupyterBridge(VTKPythonAlgorithmBase):
 
         containers.append(DataContainer(
             kind='PointData',
-            data_arrays=_get_field_arrays(point_data), 
+            data_arrays=_get_field_arrays(point_data),
             attributes=dict(_std_attributes(point_data)),
         ))
 
@@ -127,12 +128,22 @@ class VtkJupyterBridge(VTKPythonAlgorithmBase):
                     DataArray(name='types', data=vtk2array(types)),
                 ),
             ))
-
-
+        if (
+                inp.IsA('vtkImageData') or
+                inp.IsA('vtkRectilinearGrid') or
+                inp.IsA('vtkRectilinearGrid')
+            ):
+            metadata['whole_extent'] = inp.GetExtent()
+        if inp.IsA('vtkImageData'):
+            metadata['origin'] = inp.GetOrigin()
+            metadata['spacing'] = inp.GetSpacing()
 
         # TODO: Move data to widget, using LUT's to check for
         # widgets already representing the data.
-        widget_lut[self].containers = containers
+        with widget_lut[self].hold_sync():
+            widget_lut[self].kind = inp.GetClassName()
+            widget_lut[self].containers = containers
+            widget_lut[self].metadata = metadata
 
         print(widget_lut[self])
 
