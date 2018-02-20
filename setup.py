@@ -93,9 +93,11 @@ setup_args = dict(
             'pytest',
             'pytest-cov',
             'nbval',
+            'vtk'
         ],
         'examples': [
             # Any requirements for the examples to run
+            'vtk'
         ],
     },
     entry_points = {
