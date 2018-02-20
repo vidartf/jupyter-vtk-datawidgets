@@ -97,25 +97,14 @@ class VtkRendererView extends DOMWidgetView {
     // VTK pipeline
     const dataset = this.model.wrapper;
 
-    //const lookupTable = vtkColorTransferFunction.newInstance();
     const source = dataset.getOutputPort();
-    const mapper = vtkMapper.newInstance(); /*{
-      interpolateScalarsBeforeMapping: false,
-      useLookupTableScalarRange: true,
-      lookupTable,
-      scalarVisibility: false,
-    });*/
+    const mapper = vtkMapper.newInstance();
     mapper.setInputConnection(source);
 
     const actor = vtkActor.newInstance();
     actor.setMapper(mapper);
 
     this.renderer.addActor(actor);
-
-    // Manage update when lookupTable change
-    /*lookupTable.onModified(() => {
-      this.renderWindow.render();
-    });*/
 
     // First render
     this.renderer.resetCamera();

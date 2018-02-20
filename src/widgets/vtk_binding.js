@@ -20,7 +20,13 @@ function convertDataArray(widget) {
     name: widget.get('name'),
     numberOfComponents: data.shape[data.shape.length - 1],
     values: data.data,
+    vtkClass: 'vtkDataArray',
   };
+}
+
+
+function convertFieldSetArray(widget) {
+  return {data: convertDataArray(widget)}
 }
 
 
@@ -35,7 +41,7 @@ function convertContainer(widget) {
     // vtkDataSetAttributes
     const res = {
       vtkClass: "vtkDataSetAttributes",
-      arrays: dataArrays.map(da => convertDataArray(da)),
+      arrays: dataArrays.map(da => convertFieldSetArray(da)),
     };
     const names = dataArrays.map(da => da.get('name'));
     for (let key of Object.keys(attributes)) {
@@ -44,7 +50,7 @@ function convertContainer(widget) {
     return res;
   } else if (kind === 'Points') {
     // vtkPointSet
-    return Object.assign({}, 
+    return Object.assign({},
       convertDataArray(dataArrays[0]),
       {
         vtkClass: 'vtkPoints',
@@ -52,7 +58,7 @@ function convertContainer(widget) {
       }
     );
   } else if (CELL_ARRAYS.indexOf(kind) !== -1) {
-    return Object.assign({}, 
+    return Object.assign({},
       convertDataArray(dataArrays[0]),
       {
         vtkClass: 'vtkCellArray',
