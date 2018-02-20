@@ -110,16 +110,4 @@ class VtkRendererView extends DOMWidgetView {
     this.renderer.resetCamera();
     this.renderWindow.render();
   }
-
-  // camera
-  updateCamera(camera) {
-    /*['zoom', 'pitch', 'elevation', 'yaw', 'azimuth', 'roll', 'dolly'].forEach(
-      (key) => {
-        this.renderWindow.render();
-      }
-    );*/
-  }
 }
-
-
-
