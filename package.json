@@ -70,7 +70,8 @@
     "ts-loader": "^2.3.2",
     "typescript": "~2.7.2",
     "webpack": "^3.4.1",
-    "webpack-glsl-loader": "^1.0.1"
+    "webpack-glsl-loader": "^1.0.1",
+    "widget-gen": "^0.3.0"
   },
   "jupyterlab": {
     "extension": "lib/plugin"
