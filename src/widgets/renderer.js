@@ -30,6 +30,10 @@ import {
   VtkRendererModel as VtkRendererModelBase
 } from './gen';
 
+import {
+  VtkWidgetModel
+} from './base';
+
 import vtkJupyterBridge from './vtk_binding';
 
 
@@ -39,6 +43,19 @@ class VtkRendererModel extends VtkRendererModelBase {
   initialize() {
     super.initialize(...arguments);
     this.wrapper = vtkJupyterBridge.newInstance({widget: this});
+
+    this.nestedKeys = [];
+    this.dataWidgetKeys = [];
+    VtkWidgetModel.prototype.setupListeners.call(this);
+  }
+
+  onChange(model, options) {
+  }
+
+  onChildChanged(model, options) {
+      console.debug('child changed: ' + model.model_id);
+      // Propagate up hierarchy:
+      this.trigger('childchange', this);
   }
 }
 
@@ -54,17 +71,26 @@ class VtkRendererView extends DOMWidgetView {
   render() {
     this.createViewer();
     this.createPipeline();
-    this.updateCamera(this.renderer.getActiveCamera());
+    this.listenTo(this.model, 'childchange', () => this.renderWindow.render());
   }
 
   /**
    * 
    */
   update() {
+    const diff = this.model.changedAttributes();
+    console.log(diff);
+    if (diff.background) {
+      this.renderer.setBackground(diff.background);
+    }
+    if (diff.dataset !== undefined) {
+      // Recreate pipeline
+      this.renderer.getActors().map(actor => this.renderer.removeActor(actor));
+      this.createPipeline();
+    }
     // TODO: Map model to renderer properties
-    // - name, dataset -> recreate pipeline
-    // - background -> set on renderer
     // - camera position -> update camera
+    this.renderWindow.render();
   }
 
   // ----------------------------------------------------------------------------

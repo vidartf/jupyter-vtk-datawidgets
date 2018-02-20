@@ -108,11 +108,12 @@ function vtkJupyterBridge(publicAPI, model) {
   }
 
   function onWidgetChanged() {
-    model.modified();
+    publicAPI.modified();
   }
 
   // Connect to widget events:
   model.widget.on('change', onWidgetChanged);
+  model.widget.on('childchange', onWidgetChanged);
 
   publicAPI.requestData = (inData, outData) => {
     updateFromBridge(outData);

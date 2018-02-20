@@ -14,15 +14,16 @@ from ipydatawidgets import DataUnion, data_union_serialization
 
 from .traittypes import VarTuple
 
+from ._version import EXTENSION_SPEC_VERSION
+
 module_name = "jupyter-vtk-datawidgets"
-module_version = "0.1.0"
 
 
 class VtkWidget(Widget):
     _model_module = Unicode(module_name).tag(sync=True)
-    _model_module_version = Unicode(module_version).tag(sync=True)
+    _model_module_version = Unicode(EXTENSION_SPEC_VERSION).tag(sync=True)
     _view_module = Unicode(module_name).tag(sync=True)
-    _view_module_version = Unicode(module_version).tag(sync=True)
+    _view_module_version = Unicode(EXTENSION_SPEC_VERSION).tag(sync=True)
 
 
 
@@ -186,9 +187,9 @@ class UnstructuredGrid(DataSet):
 
 class VtkRenderer(DOMWidget):
     _model_module = Unicode(module_name).tag(sync=True)
-    _model_module_version = Unicode(module_version).tag(sync=True)
+    _model_module_version = Unicode(EXTENSION_SPEC_VERSION).tag(sync=True)
     _view_module = Unicode(module_name).tag(sync=True)
-    _view_module_version = Unicode(module_version).tag(sync=True)
+    _view_module_version = Unicode(EXTENSION_SPEC_VERSION).tag(sync=True)
     _model_name = Unicode('VtkRendererModel').tag(sync=True)
     _view_name = Unicode('VtkRendererView').tag(sync=True)
 
