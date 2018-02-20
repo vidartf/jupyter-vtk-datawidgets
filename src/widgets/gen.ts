@@ -2,9 +2,17 @@
 import {
   WidgetModel, DOMWidgetModel,
   WidgetView, DOMWidgetView,
-  unpack_models, ManagerBase
+  unpack_models
 } from '@jupyter-widgets/base';
 
+import {
+  data_union_serialization
+} from 'jupyter-dataserializers';
+
+
+import {
+  ManagerBase
+} from '@jupyter-widgets/base';
 
 /**
  * Type declaration for general widget serializers.
@@ -46,6 +54,10 @@ class DataArrayModel extends VtkWidgetModel {
     }}
   }
 
+  static serializers = {
+    ...VtkWidgetModel.serializers,
+    data: data_union_serialization,
+  };
 }
 
 
@@ -176,6 +188,7 @@ class VtkRendererModel extends DOMWidgetModel {
       _view_name: "VtkRendererView",
       background: [0,0,0],
       dataset: undefined,
+      size: [512, 512],
     }}
   }
 

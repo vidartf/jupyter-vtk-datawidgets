@@ -19,6 +19,7 @@ import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 // import vtkStructuredGrid from 'vtk.js/Sources/Common/DataModel/StructuredGrid';
 // import vtkUnstructuredGrid from 'vtk.js/Sources/Common/DataModel/UnstructuredGrid';
 
+
 import {
   ColorMode,
   ScalarMode,
@@ -54,7 +55,6 @@ class VtkRendererView extends DOMWidgetView {
     this.createViewer();
     this.createPipeline();
     this.updateCamera(this.renderer.getActiveCamera());
-    this.resetCameraPosition(true);
   }
 
   /**
@@ -75,65 +75,51 @@ class VtkRendererView extends DOMWidgetView {
       background: this.model.get('background') || [0, 0, 0],
     });
     this.renderWindow.addRenderer(this.renderer);
+
     this.openglRenderWindow = vtkOpenGLRenderWindow.newInstance();
     this.renderWindow.addView(this.openglRenderWindow);
-    this.openglRenderWindow.setContainer(this.el);
+
+    this.container = document.createElement('div');
+    this.el.appendChild(this.container);
+    this.openglRenderWindow.setContainer(this.container);
 
     this.interactor = vtkRenderWindowInteractor.newInstance();
     this.interactor.setView(this.openglRenderWindow);
     this.interactor.initialize();
-    this.interactor.bindEvents(this.el);
+    this.interactor.bindEvents(this.container);
 
-    this.interactor.setDesiredUpdateRate(15);
-    this.openglRenderWindow.setSize(600, 400);
+    //this.interactor.setDesiredUpdateRate(15);
+    const size = this.model.get('size');
+    this.openglRenderWindow.setSize(size[0], size[1]);
   }
 
   createPipeline() {
     // VTK pipeline
     const dataset = this.model.wrapper;
-    dataset.update();
 
-    const lookupTable = vtkColorTransferFunction.newInstance();
-    const source = dataset.getOutputData(0);
-    const mapper = vtkMapper.newInstance({
+    //const lookupTable = vtkColorTransferFunction.newInstance();
+    const source = dataset.getOutputPort();
+    const mapper = vtkMapper.newInstance(); /*{
       interpolateScalarsBeforeMapping: false,
       useLookupTableScalarRange: true,
       lookupTable,
       scalarVisibility: false,
-    });
+    });*/
+    mapper.setInputConnection(source);
+
     const actor = vtkActor.newInstance();
-    const scalars = source.getPointData().getScalars();
-    const dataRange = [].concat(scalars ? scalars.getRange() : [0, 1]);
-
-
-    // --------------------------------------------------------------------
-    // Pipeline handling
-    // --------------------------------------------------------------------
-
     actor.setMapper(mapper);
-    mapper.setInputData(source);
+
     this.renderer.addActor(actor);
 
     // Manage update when lookupTable change
-    lookupTable.onModified(() => {
+    /*lookupTable.onModified(() => {
       this.renderWindow.render();
-    });
+    });*/
 
     // First render
     this.renderer.resetCamera();
     this.renderWindow.render();
-  }
-
-  resetCameraPosition(doRender=false) {
-    const activeCamera = this.renderWindow.getRenderers()[0].getActiveCamera();
-    activeCamera.setPosition(0, 0, 3);
-    activeCamera.setFocalPoint(0, 0, 0);
-    activeCamera.setViewUp(0, 1, 0);
-    activeCamera.setClippingRange(3.49999, 4.50001);
-
-    if (doRender) {
-      this.renderWindow.render();
-    }
   }
 
   // camera

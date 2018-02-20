@@ -37,7 +37,7 @@ function convertContainer(widget) {
       vtkClass: "vtkDataSetAttributes",
       arrays: dataArrays.map(da => convertDataArray(da)),
     };
-    const names = dataArrays.map(da => da.name);
+    const names = dataArrays.map(da => da.get('name'));
     for (let key of Object.keys(attributes)) {
       res[`active${key}`] = names.indexOf(key);
     }

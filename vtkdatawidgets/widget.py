@@ -194,6 +194,7 @@ class VtkRenderer(DOMWidget):
 
     dataset = Instance(DataSet).tag(sync=True, **widget_serialization)
     background = Tuple(Float(0), Float(0), Float(0), default_value=(0, 0, 0)).tag(sync=True)
+    size = Tuple(Int(), Int(), default_value=(600, 400)).tag(sync=True)
 
     def __init__(self, dataset, background=(0, 0, 0), **kwargs):
         super(VtkRenderer, self).__init__(dataset=dataset, background=background, **kwargs)
