@@ -14,6 +14,10 @@ import {
   ManagerBase
 } from '@jupyter-widgets/base';
 
+import {
+  VtkWidgetModel
+} from './base';
+
 /**
  * Type declaration for general widget serializers.
  *
@@ -24,22 +28,6 @@ export interface ISerializers {
       deserialize?: (value?: any, manager?: ManagerBase<any>) => any;
       serialize?: (value?: any, widget?: WidgetModel) => any;
   };
-}
-
-
-
-export
-class VtkWidgetModel extends WidgetModel {
-
-  defaults() {
-    return {...super.defaults(), ...{
-      _model_module: "jupyter-vtk-datawidgets",
-      _model_module_version: "0.1.0",
-      _view_module: "jupyter-vtk-datawidgets",
-      _view_module_version: "0.1.0",
-    }}
-  }
-
 }
 
 
