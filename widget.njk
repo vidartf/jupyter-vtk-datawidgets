@@ -1,0 +1,16 @@
+{% extends "ts.njk" %}
+
+{% block localimports %}
+
+
+import {
+  VtkWidgetModel
+} from './base';
+{{ super() }}
+{% endblock %}
+
+{% block widget %}
+{% if widget.name !== 'VtkWidget' %}
+{{ super() }}
+{% endif %}
+{% endblock %}
