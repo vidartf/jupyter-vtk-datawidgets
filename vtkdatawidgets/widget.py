@@ -85,23 +85,27 @@ class MutableDataSet(DataSet):
         )
 
 
+def ensure_data_array(data):
+    if isinstance(data, DataArray):
+        return data
+    return DataArray(data=data)
+
+
 class ImageData(DataSet):
     """TODO: Add docstring here
     """
     _model_name = Unicode('ImageDataModel').tag(sync=True)
 
-    whole_extent = Tuple(*((Float(),) * 6)).tag(sync=True)
     origin = Tuple(*((Float(),) * 3)).tag(sync=True)
     spacing = Tuple(*((Float(),) * 3)).tag(sync=True)
 
-    def __init__(self, point_data, cell_data, whole_extent, origin=(0,0,0), spacing=(1,1,1)):
+    def __init__(self, point_data, cell_data, origin=(0,0,0), spacing=(1,1,1)):
         containers = (
-            DataContainer('PointData', point_data),
-            DataContainer('CellData', cell_data),
+            DataContainer('PointData', [ensure_data_array(point_data)]),
+            DataContainer('CellData', [ensure_data_array(cell_data)]),
         )
         super(ImageData, self).__init__(
             containers=containers,
-            whole_extent=whole_extent,
             origin=origin,
             spacing=spacing,
         )
@@ -117,9 +121,9 @@ class RectilinearGrid(DataSet):
 
     def __init__(self, point_data, cell_data, coordinates, whole_extent):
         containers = (
-            DataContainer('PointData', point_data),
-            DataContainer('CellData', cell_data),
-            DataContainer('Coordinates', coordinates),
+            DataContainer('PointData', [ensure_data_array(point_data)]),
+            DataContainer('CellData', [ensure_data_array(cell_data)]),
+            DataContainer('Coordinates', [ensure_data_array(coordinates)]),
         )
         super(RectilinearGrid, self).__init__(
             containers=containers,
@@ -136,9 +140,9 @@ class StructuredGrid(DataSet):
 
     def __init__(self, point_data, cell_data, points, whole_extent):
         containers = (
-            DataContainer('PointData', point_data),
-            DataContainer('CellData', cell_data),
-            DataContainer('Points', points),
+            DataContainer('PointData', [ensure_data_array(point_data)]),
+            DataContainer('CellData', [ensure_data_array(cell_data)]),
+            DataContainer('Points', [ensure_data_array(points)]),
         )
         super(StructuredGrid, self).__init__(
             containers=containers,
@@ -153,18 +157,18 @@ class PolyData(DataSet):
 
     def __init__(self, point_data, cell_data, points, verts=None, lines=None, strips=None, polys=None):
         containers = (
-            DataContainer('PointData', point_data),
-            DataContainer('CellData', cell_data),
-            DataContainer('Points', points),
+            DataContainer('PointData', [ensure_data_array(point_data)]),
+            DataContainer('CellData', [ensure_data_array(cell_data)]),
+            DataContainer('Points', [ensure_data_array(points)]),
         )
         if verts:
-            containers += (DataContainer('Verts', verts),)
+            containers += (DataContainer('Verts', [ensure_data_array(verts)]),)
         if lines:
-            containers += (DataContainer('Lines', lines),)
+            containers += (DataContainer('Lines', [ensure_data_array(lines)]),)
         if strips:
-            containers += (DataContainer('Strips', strips),)
+            containers += (DataContainer('Strips', [ensure_data_array(strips)]),)
         if polys:
-            containers += (DataContainer('Polys', polys),)
+            containers += (DataContainer('Polys', [ensure_data_array(polys)]),)
         super(PolyData, self).__init__(
             containers=containers,
         )
@@ -178,10 +182,10 @@ class UnstructuredGrid(DataSet):
 
     def __init__(self, point_data, cell_data, points, cells):
         containers = (
-            DataContainer('PointData', point_data),
-            DataContainer('CellData', cell_data),
-            DataContainer('Points', points),
-            DataContainer('Celles', cells),
+            DataContainer('PointData', [ensure_data_array(point_data)]),
+            DataContainer('CellData', [ensure_data_array(cell_data)]),
+            DataContainer('Points', [ensure_data_array(points)]),
+            DataContainer('Cells', [ensure_data_array(cells)]),
         )
         super(UnstructuredGrid, self).__init__(
             containers=containers,
