@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# Copyright (c) Vidar Tonaas Fauske.
+# Copyright (c) Simula Research Laboratory.
 # Distributed under the terms of the Modified BSD License.
 
 """
@@ -34,6 +34,9 @@ class DataArray(VtkWidget):
 
     name = Unicode(None, allow_none=True).tag(sync=True)
     data = DataUnion().tag(sync=True, **data_union_serialization)
+
+    def __init__(self, data, name=None, **kwargs):
+        super(DataArray, self).__init__(data=data, name=name, **kwargs)
 
 
 class DataContainer(VtkWidget):
