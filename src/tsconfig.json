@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "declaration": false,
+    "declaration": true,
     "noImplicitAny": true,
     "lib": ["dom", "es5", "es2015.promise", "es2015.iterable"],
     "noEmitOnError": true,
@@ -10,7 +10,6 @@
     "target": "ES5",
     "outDir": "../lib",
     "skipLibCheck": true,
-    "sourceMap": true,
-    "allowJs": true
+    "sourceMap": true
   }
 }

@@ -1,11 +1,16 @@
 'use strict'
 
 // Data sets:
+// @ts-ignore
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
+// @ts-ignore
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
+// @ts-ignore
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
 
+// @ts-ignore
 import vtk from 'vtk.js/Sources/vtk';
+// @ts-ignore
 import macro from 'vtk.js/Sources/macro';
 
 import {
@@ -13,19 +18,19 @@ import {
 } from 'jupyter-dataserializers';
 
 
-function convertDataArray(widget) {
+function convertDataArray(widget: any) {
   const data = getArray(widget.get('data'));
 
   return {
     name: widget.get('name'),
-    numberOfComponents: data.shape[data.shape.length - 1],
-    values: data.data,
+    numberOfComponents: data ? data.shape[data.shape.length - 1] : 0,
+    values: data ? data.data : null,
     vtkClass: 'vtkDataArray',
   };
 }
 
 
-function convertFieldSetArray(widget) {
+function convertFieldSetArray(widget: any) {
   return {data: convertDataArray(widget)}
 }
 
@@ -33,44 +38,40 @@ function convertFieldSetArray(widget) {
 const CELL_ARRAYS = ['Verts', 'Lines', 'Strips', 'Polys'];
 
 
-function convertContainer(widget) {
+function convertContainer(widget: any) {
   const dataArrays = widget.get('data_arrays');
   const attributes = widget.get('attributes');
   const kind = widget.get('kind');
   if (['PointData', 'CellData'].indexOf(kind) !== -1) {
     // vtkDataSetAttributes
-    const res = {
+    const res: any = {
       vtkClass: "vtkDataSetAttributes",
-      arrays: dataArrays.map(da => convertFieldSetArray(da)),
+      arrays: dataArrays.map((da: any) => convertFieldSetArray(da)),
     };
-    const names = dataArrays.map(da => da.get('name'));
+    const names = dataArrays.map((da: any) => da.get('name'));
     for (let key of Object.keys(attributes)) {
       res[`active${key}`] = names.indexOf(key);
     }
     return res;
   } else if (kind === 'Points') {
     // vtkPointSet
-    return Object.assign({},
-      convertDataArray(dataArrays[0]),
-      {
-        vtkClass: 'vtkPoints',
-        name: '_points',
-      }
-    );
+    return {
+      ...convertDataArray(dataArrays[0]),
+      vtkClass: 'vtkPoints',
+      name: '_points',
+    };
   } else if (CELL_ARRAYS.indexOf(kind) !== -1) {
-    return Object.assign({},
-      convertDataArray(dataArrays[0]),
-      {
-        vtkClass: 'vtkCellArray',
-        name: `_${kind.toLowerCase()}`,
-      }
-    );
+    return {
+      ...convertDataArray(dataArrays[0]),
+      vtkClass: 'vtkCellArray',
+      name: `_${kind.toLowerCase()}`,
+    };
   }
 }
 
 
-function convertMetadata(metadata) {
-  const ret = {};
+function convertMetadata(metadata: any): any {
+  const ret: any = {};
   if (metadata) {
     for (let key of Object.keys(metadata)) {
       if (key === 'whole_extent') {
@@ -84,23 +85,22 @@ function convertMetadata(metadata) {
 }
 
 
-function deCapitalize(str) {
+function deCapitalize(str: string) {
   return str.replace(/^./, c => c.toLowerCase());
 }
 
 
-function vtkJupyterBridge(publicAPI, model) {
+function vtkJupyterBridge(publicAPI: any, model: any) {
   // Set our className
   model.classHierarchy.push('vtkJupyterBridge');
 
-  function updateFromBridge(outData) {
+  function updateFromBridge(outData: any) {
     const dataset = model.widget.get('dataset');
     const containers = dataset.get('containers');
-    const data = Object.assign({
-        vtkClass: dataset.get('kind'),
-      },
-      convertMetadata(dataset.get('metadata')),
-    );
+    const data = {
+      vtkClass: dataset.get('kind'),
+      ...convertMetadata(dataset.get('metadata')),
+    };
     for (let container of containers) {
       data[deCapitalize(container.get('kind'))] = convertContainer(container);
     }
@@ -115,7 +115,7 @@ function vtkJupyterBridge(publicAPI, model) {
   model.widget.on('change', onWidgetChanged);
   model.widget.on('childchange', onWidgetChanged);
 
-  publicAPI.requestData = (inData, outData) => {
+  publicAPI.requestData = (inData: any, outData: any) => {
     updateFromBridge(outData);
   };
 }
@@ -132,7 +132,7 @@ const DEFAULT_VALUES = {
 
 // ----------------------------------------------------------------------------
 
-export function extend(publicAPI, model, initialValues = {}) {
+export function extend(publicAPI: any, model: any, initialValues = {}) {
   // @ts-ignore
   Object.assign(model, DEFAULT_VALUES, initialValues);
 

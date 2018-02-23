@@ -3,17 +3,27 @@ import {
   DOMWidgetModel, DOMWidgetView, ManagerBase
 } from '@jupyter-widgets/base';
 
+// @ts-ignore
 import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
+// @ts-ignore
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
+// @ts-ignore
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
+// @ts-ignore
 import vtkOpenGLRenderWindow from 'vtk.js/Sources/Rendering/OpenGL/RenderWindow';
+// @ts-ignore
 import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
+// @ts-ignore
 import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindowInteractor';
+// @ts-ignore
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
+// @ts-ignore
 import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
 
 // Data sets:
+// @ts-ignore
 import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
+// @ts-ignore
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 // import vtkRectilinearGrid from 'vtk.js/Sources/Common/DataModel/vtkRectilinearGrid';
 // import vtkStructuredGrid from 'vtk.js/Sources/Common/DataModel/StructuredGrid';
@@ -23,6 +33,7 @@ import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
 import {
   ColorMode,
   ScalarMode,
+  // @ts-ignore
 } from 'vtk.js/Sources/Rendering/Core/Mapper/Constants';
 
 
@@ -40,23 +51,25 @@ import vtkJupyterBridge from './vtk_binding';
 
 export
 class VtkRendererModel extends VtkRendererModelBase {
-  initialize() {
-    super.initialize(...arguments);
+  initialize(attributes: any, options: any) {
+    super.initialize(attributes, options);
     this.wrapper = vtkJupyterBridge.newInstance({widget: this});
 
-    this.nestedKeys = [];
-    this.dataWidgetKeys = [];
     VtkWidgetModel.prototype.setupListeners.call(this);
   }
 
-  onChange(model, options) {
+  onChange(model: VtkRendererModel, options: any) {
   }
 
-  onChildChanged(model, options) {
+  onChildChanged(model: VtkRendererModel, options: any) {
       console.debug('child changed: ' + model.model_id);
       // Propagate up hierarchy:
       this.trigger('childchange', this);
   }
+
+  wrapper: any;
+  nestedKeys = [];
+  dataWidgetKeys = [];
 }
 
 
@@ -85,7 +98,7 @@ class VtkRendererView extends DOMWidgetView {
     }
     if (diff.dataset !== undefined) {
       // Recreate pipeline
-      this.renderer.getActors().map(actor => this.renderer.removeActor(actor));
+      this.renderer.getActors().map((actor: any) => this.renderer.removeActor(actor));
       this.createPipeline();
     }
     // TODO: Map model to renderer properties
@@ -136,4 +149,12 @@ class VtkRendererView extends DOMWidgetView {
     this.renderer.resetCamera();
     this.renderWindow.render();
   }
+
+  model: VtkRendererModel;
+
+  renderWindow: any;
+  renderer: any;
+  openglRenderWindow: any;
+  interactor: any;
+  container: HTMLElement;
 }

@@ -47,7 +47,7 @@ data_files_spec = [
     ('share/jupyter/nbextensions/jupyter-vtk-datawidgets',
         nb_path, '*.js*'),
     ('share/jupyter/lab/extensions', lab_path, '*.tgz'),
-    ('etc/jupyter/nbconfig/notebook.d/' , HERE, 'jupyter-vtk-datawidgets.json')
+    ('etc/jupyter/nbconfig/notebook.d', HERE, 'jupyter-vtk-datawidgets.json')
 ]
 
 
