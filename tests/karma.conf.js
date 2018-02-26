@@ -32,6 +32,17 @@ module.exports = function (config) {
           "directory": "coverage",
           "filename": "coverage.lcov"
         }
+      },
+      bundlerOptions: {
+        acornOptions: {
+          // Workaround until 3.0.13 is released.
+          ecmaVersion: "2016",
+        },
+        transforms: [
+          require("karma-typescript-es6-transform")({
+            presets: [["env"]]
+          }),
+        ],
       }
     }
   });

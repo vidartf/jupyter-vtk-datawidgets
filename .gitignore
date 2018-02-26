@@ -145,6 +145,7 @@ $RECYCLE.BIN/
 
 **/node_modules/
 vtkdatawidgets/nbextension/static/index.*
+vtkdatawidgets/nbextension/static/*.worker.js.map
 
 # Coverage data
 # -------------
