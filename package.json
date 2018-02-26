@@ -75,7 +75,7 @@
     "webpack": "^4.0.0",
     "webpack-cli": "^2.0.9",
     "webpack-glsl-loader": "^1.0.1",
-    "widget-gen": "^0.5.0",
+    "widget-gen": "^0.5.2",
     "worker-loader": "^1.1.1"
   },
   "jupyterlab": {

@@ -5,7 +5,8 @@ import {
 } from '@jupyter-widgets/base';
 
 import {
-  data_union_serialization, array_serialization
+  data_union_serialization, array_serialization,
+  ISerializers
 } from 'jupyter-dataserializers';
 
 
@@ -13,20 +14,6 @@ import {
   VtkWidgetModel
 } from './base';
 
-
-
-
-/**
- * Type declaration for general widget serializers.
- *
- * Declared in lieu of proper interface in jupyter-widgets.
- */
-export interface ISerializers {
-  [key: string]: {
-      deserialize?: (value?: any, manager?: ManagerBase<any>) => any;
-      serialize?: (value?: any, widget?: WidgetModel) => any;
-  };
-}
 
 
 export
@@ -40,8 +27,9 @@ class DataArrayModel extends VtkWidgetModel {
     }};
   }
 
-  static serializers = {
+  static serializers: ISerializers = {
     ...VtkWidgetModel.serializers,
+    data: data_union_serialization,
   }
 
 }
@@ -60,8 +48,9 @@ class DataContainerModel extends VtkWidgetModel {
     }};
   }
 
-  static serializers = {
+  static serializers: ISerializers = {
     ...VtkWidgetModel.serializers,
+    data_arrays: { deserialize: unpack_models },
   }
 
 }
@@ -77,8 +66,9 @@ class DataSetModel extends VtkWidgetModel {
     }};
   }
 
-  static serializers = {
+  static serializers: ISerializers = {
     ...VtkWidgetModel.serializers,
+    containers: { deserialize: unpack_models },
   }
 
 }
@@ -96,7 +86,7 @@ class MutableDataSetModel extends DataSetModel {
     }};
   }
 
-  static serializers = {
+  static serializers: ISerializers = {
     ...DataSetModel.serializers,
   }
 
@@ -112,11 +102,10 @@ class ImageDataModel extends DataSetModel {
       _model_name: "ImageDataModel",
       origin: [],
       spacing: [],
-      whole_extent: [],
     }};
   }
 
-  static serializers = {
+  static serializers: ISerializers = {
     ...DataSetModel.serializers,
   }
 
@@ -134,7 +123,7 @@ class RectilinearGridModel extends DataSetModel {
     }};
   }
 
-  static serializers = {
+  static serializers: ISerializers = {
     ...DataSetModel.serializers,
   }
 
@@ -152,7 +141,7 @@ class StructuredGridModel extends DataSetModel {
     }};
   }
 
-  static serializers = {
+  static serializers: ISerializers = {
     ...DataSetModel.serializers,
   }
 
@@ -169,7 +158,7 @@ class PolyDataModel extends DataSetModel {
     }};
   }
 
-  static serializers = {
+  static serializers: ISerializers = {
     ...DataSetModel.serializers,
   }
 
@@ -186,7 +175,7 @@ class UnstructuredGridModel extends DataSetModel {
     }};
   }
 
-  static serializers = {
+  static serializers: ISerializers = {
     ...DataSetModel.serializers,
   }
 
@@ -211,8 +200,9 @@ class VtkRendererModel extends DOMWidgetModel {
     }};
   }
 
-  static serializers = {
+  static serializers: ISerializers = {
     ...DOMWidgetModel.serializers,
+    dataset: { deserialize: unpack_models },
   }
 
 }
