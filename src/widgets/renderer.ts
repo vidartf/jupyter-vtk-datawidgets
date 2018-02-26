@@ -64,9 +64,9 @@ class VtkRendererModel extends VtkRendererModelBase {
   }
 
   onChildChanged(model: VtkRendererModel, options: any) {
-      console.debug('child changed: ' + model.model_id);
-      // Propagate up hierarchy:
-      this.trigger('childchange', this);
+    console.debug('child changed: ' + model.model_id);
+    // Propagate up hierarchy:
+    this.trigger('childchange', this);
   }
 
   wrapper: any;
@@ -86,7 +86,7 @@ class VtkRendererView extends DOMWidgetView {
   render() {
     this.createViewer();
     this.createPipeline();
-    this.listenTo(this.model, 'childchange', () => this.renderWindow.render());
+    this.setupEventListeners();
   }
 
   /**
@@ -155,6 +155,29 @@ class VtkRendererView extends DOMWidgetView {
     this.renderWindow.render();
   }
 
+  // ----------------------------------------------------------------------------
+  // Ensure that re-renders are throttled to one per animation frame:
+
+  setupEventListeners() {
+    this.listenTo(this.model, 'childchange', this.tick.bind(this));
+  }
+
+  tick() {
+    if (!this._ticking) {
+      requestAnimationFrame(this.tock.bind(this));
+      this._ticking = true;
+    }
+  }
+
+  tock() {
+    this._ticking = false;
+    this.trigger('beforeRender');
+    this.renderWindow.render();
+    this.trigger('afterRender');
+  }
+
+  // ----------------------------------------------------------------------------
+
   model: VtkRendererModel;
 
   renderWindow: any;
@@ -162,4 +185,6 @@ class VtkRendererView extends DOMWidgetView {
   openglRenderWindow: any;
   interactor: any;
   container: HTMLElement;
+
+  private _ticking = false;
 }
