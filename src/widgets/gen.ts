@@ -184,6 +184,7 @@ class UnstructuredGridModel extends DataSetModel {
 
 
 export
+// @ts-ignore Ignore serializers type error
 class VtkRendererModel extends DOMWidgetModel {
 
   defaults() {
