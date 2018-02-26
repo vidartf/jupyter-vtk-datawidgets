@@ -6,6 +6,10 @@ import expect = require('expect.js');
 import * as ndarray from 'ndarray';
 
 import {
+  WidgetView
+} from '@jupyter-widgets/base';
+
+import {
   createTestModel, DummyManager
 } from './utils.spec';
 
@@ -95,6 +99,56 @@ describe('Renderer widget', () => {
         expect(canvas.tagName.toLowerCase()).to.be('canvas');
         expect(canvas.getAttribute('width')).to.eql(1024);
         expect(canvas.getAttribute('height')).to.eql(512);
+      });
+    });
+
+
+    it('should be updatable', () => {
+      let manager = new DummyManager();
+      manager.testClasses.VtkRendererView = VtkRendererView;
+      let dpolys = createTestModel(DataArrayModel, {
+        data: ndarray([1, 2, 3]),
+        name: 'cells'
+      }, manager);
+      let dpoints = createTestModel(DataArrayModel, {
+        data: ndarray([1, 2, 3]),
+        name: 'points'
+      }, manager);
+      let ds = createTestModel(MutableDataSetModel, {
+        kind: 'vtkPolyData',
+        metadata: {},
+        containers: [
+          createTestModel(DataContainerModel, {
+            kind: 'Points',
+            data_arrays: [dpoints],
+          }, manager),
+          createTestModel(DataContainerModel, {
+            kind: 'Polys',
+            data_arrays: [dpolys],
+          }, manager)
+        ],
+      }, manager);
+      let model = createTestModel(VtkRendererModel, {
+        size: [1024, 512],
+        dataset: ds,
+      }, manager);
+
+      let view: WidgetView;
+      return model.widget_manager.create_view(model).then((v) => {
+        view = v;
+        expect(view).to.be.a(VtkRendererView);
+        return model.widget_manager.display_view(null as any, view, null);
+      }).then((node: HTMLElement) => {
+        model.set({size: [400, 400]});
+        const canvas = node.children[0].children[0];
+        expect(canvas.tagName.toLowerCase()).to.be('canvas');
+        expect(canvas.getAttribute('width')).to.eql(400);
+        expect(canvas.getAttribute('height')).to.eql(400);
+
+        return new Promise((resolve) => {
+          view.on('afterRender', resolve);
+          dpolys.set({ name: 'foo' });
+        });
       });
     });
 
