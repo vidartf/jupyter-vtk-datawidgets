@@ -55,6 +55,7 @@ class VtkRendererModel extends VtkRendererModelBase {
     super.initialize(attributes, options);
     this.wrapper = vtkJupyterBridge.newInstance({widget: this});
 
+    VtkWidgetModel.prototype.setupNestedKeys.call(this);
     VtkWidgetModel.prototype.setupListeners.call(this);
   }
 
