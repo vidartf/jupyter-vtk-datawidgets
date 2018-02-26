@@ -6,10 +6,6 @@ import {
 // @ts-ignore
 import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
 // @ts-ignore
-import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
-// @ts-ignore
-import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
-// @ts-ignore
 import vtkOpenGLRenderWindow from 'vtk.js/Sources/Rendering/OpenGL/RenderWindow';
 // @ts-ignore
 import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
@@ -47,6 +43,11 @@ import {
 
 import vtkJupyterBridge from './vtk_binding';
 
+
+// Keep this here to prevent test from optimizing away imports
+// (causes side effects!)
+export
+const __keepSymbols = [vtkPolyData, vtkImageData]
 
 
 export

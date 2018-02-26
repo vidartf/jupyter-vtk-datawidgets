@@ -70,7 +70,7 @@ class DummyManager extends widgets.ManagerBase<HTMLElement> {
             } else {
                 return Promise.reject(`Cannot find class ${className}`)
             }
-        } else if (moduleName === 'jupyter-datawidgets') {
+        } else if (moduleName === 'jupyter-vtk-datawidgets') {
             if (this.testClasses[className]) {
                 return Promise.resolve(this.testClasses[className]);
             } else {
@@ -101,11 +101,16 @@ interface Constructor<T> {
 }
 
 export
-function createTestModel<T extends widgets.WidgetModel>(constructor: Constructor<T>, attributes?: any): T {
+function createTestModel<T extends widgets.WidgetModel>(
+    constructor: Constructor<T>,
+    attributes?: any,
+    widget_manager?: DummyManager): T {
   let id = widgets.uuid();
-  let widget_manager = new DummyManager();
+  if (widget_manager === undefined) {
+    widget_manager = new DummyManager();
+  }
   let modelOptions = {
-      widget_manager: widget_manager,
+      widget_manager,
       model_id: id,
   }
 
