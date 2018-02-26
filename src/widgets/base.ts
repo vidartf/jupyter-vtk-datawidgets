@@ -6,7 +6,8 @@ import {
 } from '@jupyter-widgets/base';
 
 import {
-  listenToUnion, data_union_serialization, array_serialization
+  listenToUnion, data_union_serialization, array_serialization,
+  ISerializers
 } from 'jupyter-dataserializers';
 
 import {
@@ -89,15 +90,12 @@ class VtkWidgetModel extends WidgetModel {
     this.nestedKeys = [];
     this.dataWidgetKeys = [];
     for (let [key, value] of this.pairs()) {
-      if (value instanceof VtkWidgetModel) {
-        continue;
-      }
       const serializers = (this.constructor as typeof VtkWidgetModel).serializers || {};
       const serializer = serializers[key];
       if (!serializer) {
         continue;
       }
-      if (serializer === {deserialize: unpack_models}) {
+      if (serializer.deserialize === unpack_models) {
         // There's a widget serializer, but it is not a direct ref
         // Should be nested widget then
         this.nestedKeys.push(key);
@@ -109,5 +107,9 @@ class VtkWidgetModel extends WidgetModel {
 
   nestedKeys: string[];
   dataWidgetKeys: string[];
+
+  static serializers: ISerializers = {
+    ...WidgetModel.serializers,
+  }
 
 }
