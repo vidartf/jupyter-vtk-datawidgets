@@ -94,9 +94,12 @@ class VtkRendererView extends DOMWidgetView {
    */
   update() {
     const diff = this.model.changedAttributes();
-    console.log(diff);
     if (diff.background) {
       this.renderer.setBackground(diff.background);
+    }
+    if (diff.size !== undefined) {
+      const size = this.model.get('size');
+      this.openglRenderWindow.setSize(size[0], size[1]);
     }
     if (diff.dataset !== undefined) {
       // Recreate pipeline
