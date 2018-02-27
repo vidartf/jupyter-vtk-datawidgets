@@ -31,7 +31,7 @@
     "clean:lib": "rimraf lib",
     "clean:labextension": "rimraf vtkdatawidgets/labextension",
     "clean:nbextension": "rimraf vtkdatawidgets/nbextension/static/index.js",
-    "prepare": "npm run build:lib",
+    "prepare": "npm run build",
     "test": "npm run test:firefox",
     "test:chrome": "karma start --browsers=Chrome tests/karma.conf.js",
     "test:debug": "karma start --browsers=Chrome --singleRun=false --debug=true tests/karma.conf.js",

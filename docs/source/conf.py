@@ -199,6 +199,17 @@ nbsphinx_allow_errors = True # exception ipstruct.py ipython_genutils
 
 
 def setup(app):
+    if on_rtd and not os.path.exists(os.path.join(here, '_static', 'jupyter-threejs.js')):
+        # We don't have a develop install on RTD, ensure we get build output:
+        from subprocess import check_call
+        popd = os.path.abspath(os.curdir)
+        os.chdir(os.path.join(here, '..', '..'))
+        try:
+            # This assumes build is also triggered after install:
+            check_call(['npm', 'install'])
+        finally:
+            os.chdir(popd)
+
     app.setup_extension('jupyter_sphinx.embed_widgets')
     def add_scripts(app):
         for fname in ['embed-bundle.js']:
