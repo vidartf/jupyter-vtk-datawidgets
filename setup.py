@@ -86,14 +86,14 @@ setup_args = dict(
     include_package_data = True,
     install_requires = [
         'ipydatawidgets',
-        'pyvtk',
+        'numpy',
     ],
     extras_require = {
         'test': [
             'pytest',
             'pytest-cov',
             'nbval',
-            'vtk'
+            'vtk',
         ],
         'examples': [
             # Any requirements for the examples to run

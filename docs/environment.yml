@@ -1,0 +1,10 @@
+name: jupyter-vtk-datawidgets-docs
+channels:
+  - conda-forge
+dependencies:
+- python=3.5
+- nodejs
+- numpy
+- sphinx
+- nbsphinx
+- jupyter_sphinx
