@@ -4,3 +4,11 @@ channels:
 dependencies:
 - python=3.5
 - nodejs
+- numpy
+- sphinx
+- nbsphinx
+- jupyter_sphinx
+- pip:
+  - nbsphinx-link
+  - pytest_check_links
+  - pypandoc

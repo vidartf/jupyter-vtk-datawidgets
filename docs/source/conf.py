@@ -205,8 +205,8 @@ def setup(app):
         popd = os.path.abspath(os.curdir)
         os.chdir(os.path.join(here, '..', '..'))
         try:
-            # This assumes build is also triggered after install:
             check_call(['npm', 'install'])
+            check_call(['npm', 'run', 'build'])
         finally:
             os.chdir(popd)
 
