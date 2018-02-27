@@ -204,70 +204,6 @@ elif VTK_LONG_TYPE_SIZE == 8:
     ULONG_TYPE_CODE = numpy.uint64
 
 
-######################################################################
-# The array cache.
-######################################################################
-class ArrayCache(object):
-
-    """Caches references to numpy arrays that are not copied but views
-    of which are converted to VTK arrays.  The caching prevents the user
-    from deleting or resizing the numpy array after it has been sent
-    down to VTK.  The cached arrays are automatically removed when the
-    VTK array destructs."""
-
-    ######################################################################
-    # `object` interface.
-    ######################################################################
-    def __init__(self):
-        # The cache.
-        self._cache = {}
-
-    def __len__(self):
-        return len(self._cache)
-
-    def __contains__(self, vtk_arr):
-        key = vtk_arr.__this__
-        return key in self._cache
-
-    ######################################################################
-    # `ArrayCache` interface.
-    ######################################################################
-    def add(self, vtk_arr, np_arr):
-        """Add numpy array corresponding to the vtk array to the
-        cache."""
-        key = vtk_arr.__this__
-        cache = self._cache
-
-        # Setup a callback so this cached array reference is removed
-        # when the VTK array is destroyed.  Passing the key to the
-        # `lambda` function is necessary because the callback will not
-        # receive the object (it will receive `None`) and thus there
-        # is no way to know which array reference one has to remove.
-        vtk_arr.AddObserver('DeleteEvent', lambda o, e, key=key: \
-                            self._remove_array(key))
-
-        # Cache the array
-        cache[key] = np_arr
-
-    def get(self, vtk_arr):
-        """Return the cached numpy array given a VTK array."""
-        key = vtk_arr.__this__
-        return self._cache[key]
-
-    ######################################################################
-    # Non-public interface.
-    ######################################################################
-    def _remove_array(self, key):
-        """Private function that removes the cached array.  Do not
-        call this unless you know what you are doing."""
-        try:
-            del self._cache[key]
-        except KeyError:
-            pass
-
-
-_array_cache = ArrayCache()
-
 
 def get_vtk_to_numeric_typemap():
     """Returns the VTK array type to numpy array type mapping."""
@@ -313,17 +249,6 @@ def vtk2array(vtk_array):
     if shape[0] == 0:
         dtype = get_numeric_array_type(typ)
         return numpy.array([], dtype)
-
-    # First check if this array already has a numpy array cached,
-    # if it does and the array size has not been changed, reshape
-    # that and return it.
-    if vtk_array in _array_cache:
-        arr = _array_cache.get(vtk_array)
-        if shape[1] == 1:
-            shape = (shape[0], )
-        if arr.size == numpy.prod(shape):
-            arr = numpy.reshape(arr, shape)
-            return arr
 
     # If VTK's new numpy support is available, use the buffer interface.
     if numpy_support is not None and typ != vtkConstants.VTK_BIT:
