@@ -95,7 +95,7 @@ class VtkRendererView extends DOMWidgetView {
   update() {
     const diff = this.model.changedAttributes();
     if (diff.background) {
-      this.renderer.setBackground(diff.background);
+      this.renderer.setBackground(ensureColorArray(this.model.get('background')));
     }
     if (diff.size !== undefined) {
       const size = this.model.get('size');
@@ -116,7 +116,7 @@ class VtkRendererView extends DOMWidgetView {
   createViewer() {
     this.renderWindow = vtkRenderWindow.newInstance();
     this.renderer = vtkRenderer.newInstance({
-      background: this.model.get('background') || [0, 0, 0],
+      background: ensureColorArray(this.model.get('background')) || [0, 0, 0],
     });
     this.renderWindow.addRenderer(this.renderer);
 
@@ -187,4 +187,28 @@ class VtkRendererView extends DOMWidgetView {
   container: HTMLElement;
 
   private _ticking = false;
+}
+
+
+const colorSplitter = /(#([a-f0-9]{6}))|(rgba\(\d+, \d+, \d+, (0\.?\d?)\))/i
+
+function ensureColorArray(color: number[] | string): number[] {
+  if (Array.isArray(color)) {
+    return color;
+  }
+  const ctx = document.createElement('canvas').getContext('2d');
+  if (!ctx) {
+    throw new Error('Could not create new 2D context for converting color value');
+  }
+  ctx.fillStyle = color;
+  const match = colorSplitter.exec(ctx.fillStyle);
+  if (match && match[1]) {
+    return [
+      parseInt(match[2].slice(0, 2), 16) / 255,
+      parseInt(match[2].slice(2, 4), 16) / 255,
+      parseInt(match[2].slice(4, 6), 16) / 255];
+  } else if (match && match[3]) {
+    return [parseInt(match[4]) / 255, parseInt(match[5]) / 255, parseInt(match[6]) / 255, parseFloat(match[7])];
+  }
+  throw new Error(`Could not covert color value: ${color}`);
 }

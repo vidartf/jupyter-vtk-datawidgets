@@ -8,8 +8,10 @@
 TODO: Add module docstring
 """
 
-from ipywidgets import Widget, DOMWidget, widget_serialization
-from traitlets import Unicode, Undefined, Dict, List, Enum, Tuple, Float, Instance, Int
+from ipywidgets import Widget, DOMWidget, widget_serialization, Color
+from traitlets import (
+    Unicode, Undefined, Dict, List, Enum, Tuple, Float, Instance, Int, Union,
+)
 from ipydatawidgets import DataUnion, data_union_serialization
 
 from .traittypes import VarTuple
@@ -201,8 +203,11 @@ class VtkRenderer(DOMWidget):
     _view_name = Unicode('VtkRendererView').tag(sync=True)
 
     dataset = Instance(DataSet).tag(sync=True, **widget_serialization)
-    background = Tuple(Float(0), Float(0), Float(0), default_value=(0, 0, 0)).tag(sync=True)
     size = Tuple(Int(), Int(), default_value=(600, 400)).tag(sync=True)
+    background = Union(
+        [ Tuple(Float(0), Float(0), Float(0)), Color() ],
+        default_value=(0, 0, 0)
+    ).tag(sync=True)
 
     def __init__(self, dataset, background=(0, 0, 0), **kwargs):
         super(VtkRenderer, self).__init__(dataset=dataset, background=background, **kwargs)
