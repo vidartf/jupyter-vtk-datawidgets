@@ -99,6 +99,16 @@ setup_args = dict(
             # Any requirements for the examples to run
             'vtk'
         ],
+        'docs': [
+            'sphinx>=1.5',
+            'recommonmark',
+            'sphinx_rtd_theme',
+            'nbsphinx>=0.2.13',
+            'jupyter_sphinx',
+            'nbsphinx-link',
+            'pytest_check_links',
+            'pypandoc',
+        ],
     },
     entry_points = {
     },
