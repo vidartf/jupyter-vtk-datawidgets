@@ -259,59 +259,61 @@ def vtk2array(vtk_array):
         result.shape = shape
         return result
 
-    # Setup an imaging pipeline to export the array.
-    img_data = vtk.vtkImageData()
-    img_data.SetDimensions(shape[0], 1, 1)
-    if typ == vtkConstants.VTK_BIT:
-        iarr = vtk.vtkCharArray()
-        iarr.DeepCopy(vtk_array)
-        img_data.GetPointData().SetScalars(iarr)
-    elif typ == vtkConstants.VTK_ID_TYPE:
-        # Needed since VTK_ID_TYPE does not work with VTK 4.5.
-        iarr = vtk.vtkLongArray()
-        iarr.SetNumberOfTuples(vtk_array.GetNumberOfTuples())
-        nc = vtk_array.GetNumberOfComponents()
-        iarr.SetNumberOfComponents(nc)
-        for i in range(nc):
-            iarr.CopyComponent(i, vtk_array, i)
-        img_data.GetPointData().SetScalars(iarr)
-    else:
-        img_data.GetPointData().SetScalars(vtk_array)
+    else: # pragma: no cover
 
-    if is_old_pipeline():
-        img_data.SetNumberOfScalarComponents(shape[1])
-        if typ == vtkConstants.VTK_ID_TYPE:
-            # Hack necessary because vtkImageData can't handle VTK_ID_TYPE.
-            img_data.SetScalarType(vtkConstants.VTK_LONG)
-            r_dtype = get_numeric_array_type(vtkConstants.VTK_LONG)
-        elif typ == vtkConstants.VTK_BIT:
-            img_data.SetScalarType(vtkConstants.VTK_CHAR)
-            r_dtype = get_numeric_array_type(vtkConstants.VTK_CHAR)
+        # Setup an imaging pipeline to export the array.
+        img_data = vtk.vtkImageData()
+        img_data.SetDimensions(shape[0], 1, 1)
+        if typ == vtkConstants.VTK_BIT:
+            iarr = vtk.vtkCharArray()
+            iarr.DeepCopy(vtk_array)
+            img_data.GetPointData().SetScalars(iarr)
+        elif typ == vtkConstants.VTK_ID_TYPE:
+            # Needed since VTK_ID_TYPE does not work with VTK 4.5.
+            iarr = vtk.vtkLongArray()
+            iarr.SetNumberOfTuples(vtk_array.GetNumberOfTuples())
+            nc = vtk_array.GetNumberOfComponents()
+            iarr.SetNumberOfComponents(nc)
+            for i in range(nc):
+                iarr.CopyComponent(i, vtk_array, i)
+            img_data.GetPointData().SetScalars(iarr)
         else:
-            img_data.SetScalarType(typ)
-            r_dtype = get_numeric_array_type(typ)
-        img_data.Update()
-    else:
-        if typ == vtkConstants.VTK_ID_TYPE:
-            r_dtype = get_numeric_array_type(vtkConstants.VTK_LONG)
-        elif typ == vtkConstants.VTK_BIT:
-            r_dtype = get_numeric_array_type(vtkConstants.VTK_CHAR)
+            img_data.GetPointData().SetScalars(vtk_array)
+
+        if is_old_pipeline():
+            img_data.SetNumberOfScalarComponents(shape[1])
+            if typ == vtkConstants.VTK_ID_TYPE:
+                # Hack necessary because vtkImageData can't handle VTK_ID_TYPE.
+                img_data.SetScalarType(vtkConstants.VTK_LONG)
+                r_dtype = get_numeric_array_type(vtkConstants.VTK_LONG)
+            elif typ == vtkConstants.VTK_BIT:
+                img_data.SetScalarType(vtkConstants.VTK_CHAR)
+                r_dtype = get_numeric_array_type(vtkConstants.VTK_CHAR)
+            else:
+                img_data.SetScalarType(typ)
+                r_dtype = get_numeric_array_type(typ)
+            img_data.Update()
         else:
-            r_dtype = get_numeric_array_type(typ)
-        img_data.Modified()
+            if typ == vtkConstants.VTK_ID_TYPE:
+                r_dtype = get_numeric_array_type(vtkConstants.VTK_LONG)
+            elif typ == vtkConstants.VTK_BIT:
+                r_dtype = get_numeric_array_type(vtkConstants.VTK_CHAR)
+            else:
+                r_dtype = get_numeric_array_type(typ)
+            img_data.Modified()
 
-    exp = vtk.vtkImageExport()
-    if is_old_pipeline():
-        exp.SetInput(img_data)
-    else:
-        exp.SetInputData(img_data)
+        exp = vtk.vtkImageExport()
+        if is_old_pipeline():
+            exp.SetInput(img_data)
+        else:
+            exp.SetInputData(img_data)
 
-    # Create an array of the right size and export the image into it.
-    im_arr = numpy.empty((shape[0]*shape[1],), r_dtype)
-    exp.Export(im_arr)
+        # Create an array of the right size and export the image into it.
+        im_arr = numpy.empty((shape[0]*shape[1],), r_dtype)
+        exp.Export(im_arr)
 
-    # Now reshape it.
-    if shape[1] == 1:
-        shape = (shape[0], )
-    im_arr = numpy.reshape(im_arr, shape)
-    return im_arr
+        # Now reshape it.
+        if shape[1] == 1:
+            shape = (shape[0], )
+        im_arr = numpy.reshape(im_arr, shape)
+        return im_arr
