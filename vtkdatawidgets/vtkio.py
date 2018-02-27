@@ -54,7 +54,7 @@ expected_piece_tags = {
     'UnstructuredGrid': ['PointData', 'CellData', 'Points', 'Cells'],
 }
 
-vtu_to_numpy_type = {
+_vtu_to_numpy_type = {
     'Float32': numpy.dtype(numpy.float32),
     'Float64': numpy.dtype(numpy.float64),
     'Int8': numpy.dtype(numpy.int8),
@@ -66,7 +66,15 @@ vtu_to_numpy_type = {
     'UInt32': numpy.dtype(numpy.uint32),
     'UInt64': numpy.dtype(numpy.uint64),
     }
-numpy_to_vtu_type = {v: k for k, v in vtu_to_numpy_type.items()}
+numpy_to_vtu_type = {v: k for k, v in _vtu_to_numpy_type.items()}
+
+_vtu_to_numpy_byte_order = {
+    'LittleEndian': '<',
+    'BigEndian': '>',
+}
+
+def vtu_to_numpy_type(key, byte_order='LittleEndian'):
+    return _vtu_to_numpy_type[key].newbyteorder(_vtu_to_numpy_byte_order[byte_order])
 
 
 
@@ -86,8 +94,9 @@ def _validate_root(root):
 def _proc_root(root, path, conf):
     main_type = root.attrib['type']
     appended_data = []
-    conf['compressor'] = root.attrib['compressor']
+    conf['compressor'] = root.attrib.get('compressor', None)
     conf['byte_order'] = root.attrib['byte_order']
+    conf['header_type'] = root.attrib['header_type']
     conf['version'] = root.attrib['version']
     dataset_node = None
     for c in root:
@@ -95,7 +104,7 @@ def _proc_root(root, path, conf):
             if dataset_node is not None:
                 raise ValueError('Multiple %r elements in file!' % main_type)
             dataset_node = c
-        elif c.tag == 'AppendendData':
+        elif c.tag == 'AppendedData':
             assert c.attrib['encoding'] == 'base64'
             data = c.text.strip()
             # The appended data always begins with a (meaningless)
@@ -103,36 +112,36 @@ def _proc_root(root, path, conf):
             assert data[0] == '_'
             appended_data.append(data[1:])
     conf['appended_data'] = appended_data
-    dataset = _proc(c, path + (c.tag,), conf)
+    dataset = _proc(dataset_node, path + (dataset_node.tag,), conf)
     return dataset, appended_data
 
 def _proc_main_tag(node, path, conf):
     main_type = node.tag
     is_parallel = main_type[0] == 'P'
 
-    pieces = []
+    containers = []
     for sub in node:
         if sub.tag == 'Piece':
-            pieces.append(_proc(sub, path + (sub.tag,), conf))
+            containers.extend(_proc(sub, path + (sub.tag,), conf))
 
-    kwargs = dict({kv for kv in _proc_attributes(node.attrib)})
-    kwargs['pieces'] = pieces
+    kwargs = dict(
+        kind='vtk' + main_type,
+        metadata=dict({k: v for k, v in _proc_attributes(node.attrib)}),
+        containers=containers,
+    )
 
-    try:
-        cls = getattr(vtk_widgets, main_type)
-    except AttributeError:
-        raise ValueError('Unsupported dataset type: %r' % main_type)
-    return cls(**kwargs)
+    #try:
+    #    cls = getattr(vtk_widgets, main_type)
+    #except AttributeError:
+    #    raise ValueError('Unsupported dataset type: %r' % main_type)
+    return vtk_widgets.MutableDataSet(**kwargs)
 
 def _proc_piece(node, path, conf):
-    data = []
+    containers = []
     for sub in node:
         if sub.tag in expected_piece_tags[path[-2]]:
-            data.append(_proc(sub, path + (sub.tag,), conf))
-    return vtk_widgets.Piece(
-        attributes=dict({kv for kv in _proc_attributes(node.attrib)}),
-        data=data,
-    )
+            containers.append(_proc(sub, path + (sub.tag,), conf))
+    return containers
 
 def _proc_pc_data(node, path, conf):
     data_arrays = _proc_piece_dataarrays(node, path, conf)
@@ -187,7 +196,7 @@ def _proc_piece_dataarrays(node, path, conf):
 
 def _proc_data_array(node, path, conf):
     name = node.attrib.get('Name', None)
-    data = read_data(node, conf)
+    data = _read_data(node, conf)
     return vtk_widgets.DataArray(
         data=data,
         name=name,
@@ -196,12 +205,9 @@ def _proc_data_array(node, path, conf):
 
 def _proc_attributes(attrib):
     for k, v in attrib.items():
-        if (k not in ('Extent', 'Origin', 'Spacing', 'WholeExtent') or
-                not k.startswith('NumberOf')):
+        if (k not in ('Origin', 'Spacing', 'WholeExtent')):
             continue
         s = v.split()
-        if len(s) == 1:
-            yield k, float(s[0])
         yield k, [float(a) for a in s]
 
 
@@ -239,20 +245,62 @@ def _num_bytes_to_num_base64_chars(num_bytes):
     return -(-num_bytes // 3) * 4
 
 
-def _read_binary(data, data_type, conf):
-    # first read the the block size; it determines the size of the header
-    dtype = vtu_to_numpy_type[conf.get('header_type', 'UInt32')]
-    num_bytes_per_item = numpy.dtype(dtype).itemsize
-    num_chars = _num_bytes_to_num_base64_chars(num_bytes_per_item)
-    byte_string = base64.b64decode(data[:num_chars])[:num_bytes_per_item]
-    num_blocks = numpy.fromstring(byte_string, dtype)[0]
+def _hex_repr(data):
+    return ' '.join('{:02x}'.format(x) for x in data)
+
+
+def _read_binary_uncompressed(data, data_type, conf):
+    byte_order = conf.get('byte_order', 'LittleEndian')
+    # Data dtype:
+    dtype = vtu_to_numpy_type(data_type, byte_order)
+    # Header dtype:
+    header_dtype = vtu_to_numpy_type(conf.get('header_type', 'UInt32'), byte_order)
+
+    # Uncompressed format: [#bytes][DATA]
+    # Read header: [#bytes]
+    num_header_bytes = int(numpy.dtype(header_dtype).itemsize)
+    num_header_chars = _num_bytes_to_num_base64_chars(num_header_bytes)
+    byte_string = base64.b64decode(data[:num_header_chars])[:num_header_bytes]
+    num_bytes = int(numpy.fromstring(byte_string, header_dtype)[0])
+
+    if num_bytes <= 0:
+        return numpy.empty([], dtype=dtype)
+    num_chars = _num_bytes_to_num_base64_chars(num_header_bytes + num_bytes)
+    byte_array = base64.b64decode(data[:num_chars])
+    return numpy.fromstring(
+            byte_array[num_header_bytes : num_header_bytes + num_bytes],
+            dtype=dtype)
+
+
+def _read_binary_compressed(data, data_type, conf):
+    byte_order = conf.get('byte_order', 'LittleEndian')
+    # Data dtype:
+    dtype = vtu_to_numpy_type(data_type, byte_order)
+    # Header dtype:
+    header_dtype = vtu_to_numpy_type(conf.get('header_type', 'UInt32'), byte_order)
+
+    byte_array = base64.b64decode(data)
+
+    # Compressed format: [#blocks][#u-size][#p-size][#c-size-1][#c-size-2]...[#c-size-#blocks][DATA]
+    #  [#blocks] = Number of blocks
+    #  [#u-size] = Block size before compression
+    #  [#p-size] = Size of last partial block (zero if it not needed)
+    #  [#c-size-i] = Size in bytes of block i after compression
+
+    num_headeritem_bytes = int(numpy.dtype(header_dtype).itemsize)
+    num_header_chars = _num_bytes_to_num_base64_chars(num_headeritem_bytes)
+    byte_string = base64.b64decode(data[:num_header_chars])[:num_headeritem_bytes]
+    num_blocks = numpy.fromstring(byte_string, header_dtype)[0]
+
+    if num_blocks <= 0:
+        return numpy.empty([], dtype=dtype)
 
     # read the entire header
-    num_header_items = 3 + num_blocks
-    num_header_bytes = num_bytes_per_item * num_header_items
+    num_headeritems = 3 + num_blocks
+    num_header_bytes = int(num_headeritem_bytes * num_headeritems)
     num_header_chars = _num_bytes_to_num_base64_chars(num_header_bytes)
-    byte_string = base64.b64decode(data[:num_header_chars])
-    header = numpy.fromstring(byte_string, dtype)
+    byte_string = base64.b64decode(data[:num_header_chars])[:num_header_bytes]
+    header = numpy.fromstring(byte_string, header_dtype)
 
     # num_blocks = header[0]
     # max_uncompressed_block_size = header[1]
@@ -260,18 +308,18 @@ def _read_binary(data, data_type, conf):
     block_sizes = header[3:]
 
     # Read the block data
-    byte_array = base64.b64decode(data[num_header_chars:])
-    dtype = vtu_to_numpy_type[data_type]
-    num_bytes_per_item = numpy.dtype(dtype).itemsize
-
     byte_offsets = numpy.concatenate(
-            [[0], numpy.cumsum(block_sizes, dtype=block_sizes.dtype)]
+            [[0], numpy.cumsum(block_sizes, dtype=numpy.uint64)]
             )
     # https://github.com/numpy/numpy/issues/10135
-    byte_offsets = byte_offsets.astype(numpy.int64)
+    byte_offsets = byte_offsets.astype(numpy.uint64)
+
+    final_byte = int(byte_offsets[-1])
 
     # process the compressed data
-    if conf.get('compressor', None) == 'vtkZLibDataCompressor':
+    num_data_chars = _num_bytes_to_num_base64_chars(final_byte)
+    byte_array = base64.b64decode(data[num_header_chars : num_header_chars + num_data_chars])[:final_byte]
+    if conf['compressor'] == 'vtkZLibDataCompressor':
         import zlib
         block_data = numpy.concatenate([
             numpy.fromstring(zlib.decompress(
@@ -280,25 +328,27 @@ def _read_binary(data, data_type, conf):
             for k in range(num_blocks)
         ])
     else:
-        block_data = numpy.concatenate([
-            numpy.fromstring(
-                byte_array[byte_offsets[k]:byte_offsets[k+1]],
-                dtype=dtype)
-            for k in range(num_blocks)
-        ])
+        raise ValueError('Unsupported compressor: %r' % conf['compressor'])
 
     return block_data
 
 
-def read_data(node, conf):
+def _read_binary(data, data_type, conf):
+    if conf['compressor'] is None:
+        return _read_binary_uncompressed(data, data_type, conf)
+    return _read_binary_compressed(data, data_type, conf)
+
+
+def _read_data(node, conf):
+    dtype = node.attrib['type']
     if node.attrib['format'] == 'ascii':
         # ascii
         data = numpy.array(
             node.text.split(),
-            dtype=vtu_to_numpy_type[node.attrib['type']]
+            dtype=vtu_to_numpy_type(dtype, conf.get('byte_order', 'LittleEndian'))
             )
     elif node.attrib['format'] == 'binary':
-        data = _read_binary(node.text.strip(), node.attrib['type'], conf)
+        data = _read_binary(node.text.strip(), dtype, conf)
     else:
         # appended data
         assert node.attrib['format'] == 'appended', \
@@ -307,8 +357,8 @@ def read_data(node, conf):
         appdata = conf['appended_data']
         encoded = appdata[0] if appdata else ''
 
-        offset = node.attrib['offset']
-        data = _read_binary(encoded[offset:], da['type'], conf)
+        offset = int(node.attrib['offset'])
+        data = _read_binary(encoded[offset:], dtype, conf)
 
     if 'NumberOfComponents' in node.attrib:
         data = data.reshape(-1, int(node.attrib['NumberOfComponents']))
@@ -322,5 +372,5 @@ def read_vtk_xml(filename):
 
     _validate_root(root)
 
-    return _proc(root, (), {})
+    return _proc(root, (), {})[0]
 
