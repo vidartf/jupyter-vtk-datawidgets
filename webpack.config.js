@@ -1,7 +1,6 @@
 var loaders = [
   { test: /\.ts$/, loader: 'ts-loader' },
   { test: /\.js$/, loader: "source-map-loader" },
-  { test: /\.glsl$/, loader: 'webpack-glsl-loader' },
 ];
 
 var webpack = require('webpack');
